@@ -6,6 +6,71 @@ All notable changes to [diagram-js](https://github.com/bpmn-io/diagram-js) are d
 
 _**Note:** Yet to be released changes appear here._
 
+## 9.1.0
+
+* `DEPS`: bump utility dependencies
+
+## 9.0.0
+
+* `FEAT`: use ES2018 syntax ([#674](https://github.com/bpmn-io/bpmn-js/pull/674))
+* `DEPS`: update to `didi@9`
+
+### Breaking Changes
+
+* Migrated to ES2018 syntax. [Read the blog post with details and a migration guide](https://bpmn.io/blog/posts/2022-migration-to-es2018.html).
+
+## 8.9.0
+
+* `FEAT`: expose result of editor action execution ([#660](https://github.com/bpmn-io/diagram-js/pull/660))
+* `FEAT`: only copy if selected elements ([#660](https://github.com/bpmn-io/diagram-js/pull/660))
+* `FIX`: restore logging of initialization errors
+* `DEPS`: update to `didi@8.0.1`
+
+## 8.8.0
+
+* `FEAT`: provide keyboard event testing utilities ([#664](https://github.com/bpmn-io/diagram-js/pull/664))
+
+## 7.9.0
+
+* `FEAT`: provide keyboard event testing utilities ([#663](https://github.com/bpmn-io/diagram-js/pull/663))
+
+## 8.7.1
+
+* `FIX`: correct helper SVG styling ([#657](https://github.com/bpmn-io/diagram-js/pull/657))
+
+## 8.7.0
+
+* `FEAT`: use rules to determine which elements should be aligned and distributed ([#656](https://github.com/bpmn-io/diagram-js/pull/656))
+* `FIX`: distribute elements regardless their relative size ([#656](https://github.com/bpmn-io/diagram-js/pull/656))
+
+## 8.6.0
+
+* `FEAT`: allow to use groups for popup menu entries ([#653](https://github.com/bpmn-io/diagram-js/pull/653))
+* `FEAT`: set popup menu name via `data-popup` to allow custom styling
+* `FIX`: fix potentially vulnerable code in popup menu, context pad, and palette
+* `FIX`: display popup menu even if cursor position is not passed ([#654](https://github.com/bpmn-io/diagram-js/pull/654))
+
+## 8.5.0
+
+_Complete rework of outline + drag handles._
+
+* `FEAT`: clearly distinguish select and hover states ([`b52f35ac`](https://github.com/bpmn-io/diagram-js/commit/b52f35ac9931241cda09c5c5a435ed7ab168d8f1))
+* `FEAT`: improve outline and drag handle styles ([`20c8e7a8`](https://github.com/bpmn-io/diagram-js/commit/20c8e7a8929957b7d97c0673373bd7955b526249), [`2e73f74a`](https://github.com/bpmn-io/diagram-js/commit/2e73f74ab8e8a8074f6399f404173f436bb3e94f))
+* `FEAT`: improve lasso tool colors ([`2e1c3572`](https://github.com/bpmn-io/diagram-js/commit/2e1c35727333398c69e780d98d8a72f3307530e9))
+* `FEAT`: indicate drag via cursor ([`358c7b9f`](https://github.com/bpmn-io/diagram-js/commit/358c7b9f701e9a042045597cc8001d4e5c6c5472))
+* `FEAT`: expose connection created via `connect` ([`ca1ad0c3`](https://github.com/bpmn-io/diagram-js/commit/ca1ad0c3229db2ce5e8dd6f6f6fb52e701216034))
+* `FEAT`: select newly created connection ([`c9c363c7`](https://github.com/bpmn-io/diagram-js/commit/c9c363c7d5e977aca3352c18e22d136b2eb0407c))
+* `FEAT`: snap bendpoints to connection ([`e49eacea`](https://github.com/bpmn-io/diagram-js/commit/e49eaceaf69a4d319c0921bb75be983bfcec7866))
+* `FEAT`: remove broken highlight on connections ([`02e94f05`](https://github.com/bpmn-io/diagram-js/commit/02e94f05a19e8c50a9b1ed21c84e87055bc079be))
+* `FIX`: remove incoming/outgoing connections on `connection.delete` ([#648](https://github.com/bpmn-io/diagram-js/pull/648))
+
+## 8.4.0
+
+* `FEAT`: add multi-element context pad ([#278](https://github.com/bpmn-io/diagram-js/issues/278))
+* `FEAT`: allow adding connections to connections ([#641](https://github.com/bpmn-io/diagram-js/pull/641))
+* `CHORE`: replace `inherits` with `inherits-browser`
+* `CHORE`: update to `didi@8`
+
 ## 8.3.0
 
 * `FEAT`: add hit box type to disable move interaction: `no-move`
