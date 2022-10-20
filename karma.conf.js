@@ -1,3 +1,5 @@
+/* eslint-env node */
+
 var path = require('path');
 
 var coverage = process.env.COVERAGE;
@@ -19,7 +21,8 @@ module.exports = function(karma) {
 
     frameworks: [
       'mocha',
-      'sinon-chai'
+      'sinon-chai',
+      'webpack'
     ],
 
     files: [
@@ -65,12 +68,19 @@ module.exports = function(karma) {
         ].concat(
           coverage ? {
             test: /\.js$/,
+            exclude: /node_modules/,
             use: {
-              loader: 'istanbul-instrumenter-loader',
-              options: { esModules: true }
-            },
-            include: /lib\.*/,
-            exclude: /node_modules/
+              loader: 'babel-loader',
+              options: {
+                plugins: [
+                  [ 'istanbul', {
+                    include: [
+                      'lib/**'
+                    ]
+                  } ]
+                ],
+              }
+            }
           } : []
         )
       },

@@ -261,6 +261,18 @@ describe('features/popup', function() {
     }));
 
 
+    it('should be visible even if no `position.cursor` was passed', inject(function(popupMenu) {
+
+      // when
+      popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+
+      var container = popupMenu._current.container;
+
+      // then
+      expect(getComputedStyle(container).visibility).not.to.eql('hidden');
+    }));
+
+
     it('should add entries to menu', inject(function(popupMenu) {
 
       // when
@@ -290,14 +302,26 @@ describe('features/popup', function() {
       popupMenu.open({}, 'item-menu' ,{ x: 100, y: 100 });
 
       // then
-      var parent = queryPopup(popupMenu, '.djs-popup-body');
-      var entry1 = parent.childNodes[0];
-      var entry2 = parent.childNodes[1];
-      var entry3 = parent.childNodes[2];
+      var group = getGroup(popupMenu, 'default');
+      var entry1 = group.childNodes[0];
+      var entry2 = group.childNodes[1];
+      var entry3 = group.childNodes[2];
 
       expect(entry1.getAttribute('data-id')).to.eql('save');
       expect(entry2.getAttribute('data-id')).to.eql('load');
       expect(entry3.getAttribute('data-id')).to.eql('undo');
+    }));
+
+
+    it('should add `data-popup` to popup menu container', inject(function(popupMenu) {
+
+      // when
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
+
+      // then
+      var container = getPopupContainer(popupMenu);
+
+      expect(container.dataset).to.have.property('popup', 'menu');
     }));
 
 
@@ -322,6 +346,92 @@ describe('features/popup', function() {
       }).to.throw('Element is missing');
 
     }));
+
+
+    describe('grouping', function() {
+
+      it('should group entries', inject(function(popupMenu) {
+
+        // given
+        popupMenu.registerProvider('group-menu', {
+          getEntries: function() {
+            return [
+              { id: 'save', label: 'SAVE', group: 'file' },
+              { id: 'load', label: 'LOAD', group: 'file' },
+              { id: 'undo', label: 'UNDO', group: 'command' },
+              { id: 'redo', label: 'REDO', group: 'command' },
+              { id: 'clear', label: 'CLEAR' }
+            ];
+          }
+        });
+
+        // when
+        popupMenu.open({}, 'group-menu' ,{ x: 100, y: 100 });
+
+        // then
+        var parent = queryPopup(popupMenu, '.djs-popup-body'),
+            group1 = parent.childNodes[0],
+            group2 = parent.childNodes[1],
+            group3 = parent.childNodes[2];
+
+        expect(group1.dataset).to.have.property('group', 'file');
+        expect(group2.dataset).to.have.property('group', 'command');
+        expect(group3.dataset).to.have.property('group', 'default');
+
+        expect(group1.childNodes).to.have.lengthOf(2);
+        expect(group2.childNodes).to.have.lengthOf(2);
+        expect(group3.childNodes).to.have.lengthOf(1);
+      }));
+
+
+      it('should use group <default> if not provided', inject(function(popupMenu) {
+
+        // given
+        popupMenu.registerProvider('group-menu', {
+          getEntries: function() {
+            return [
+              { id: 'save', label: 'SAVE' },
+              { id: 'load', label: 'LOAD' },
+              { id: 'undo', label: 'UNDO' },
+              { id: 'redo', label: 'REDO' },
+              { id: 'clear', label: 'CLEAR' }
+            ];
+          }
+        });
+
+        // when
+        popupMenu.open({}, 'group-menu' ,{ x: 100, y: 100 });
+
+        // then
+        var parent = queryPopup(popupMenu, '.djs-popup-body'),
+            group1 = parent.childNodes[0];
+
+        expect(parent.childNodes).to.have.lengthOf(1);
+        expect(group1.dataset).to.have.property('group', 'default');
+        expect(group1.childNodes).to.have.lengthOf(5);
+      }));
+
+
+      it('should NOT allow XSS via group', inject(function(popupMenu) {
+
+        // given
+        popupMenu.registerProvider('group-menu', {
+          getEntries: function() {
+            return [
+              { id: 'save', label: 'SAVE', group: '"><marquee />' }
+            ];
+          }
+        });
+
+        // when
+        popupMenu.open({}, 'group-menu' ,{ x: 100, y: 100 });
+
+        // then
+        var injected = queryPopup(popupMenu, 'marquee');
+
+        expect(injected).not.to.exist;
+      }));
+    });
 
 
     describe('multiple providers', function() {
@@ -762,8 +872,7 @@ describe('features/popup', function() {
         popupMenu.open({}, 'popup-menu1', { x: 100, y: 100 });
         popupMenu.open({}, 'popup-menu2', { x: 200, y: 200 });
 
-        var container = popupMenu._current.container,
-            entriesContainer = domQuery('.djs-popup-body', container);
+        var container = getPopupContainer(popupMenu);
 
         // then
         expect(domQuery('.popup-menu1', document)).to.be.null;
@@ -774,8 +883,10 @@ describe('features/popup', function() {
         expect(container.style.left).to.eql('200px');
         expect(container.style.top).to.eql('200px');
 
-        expect(entriesContainer.childNodes[0].textContent).to.eql('Entry A');
-        expect(entriesContainer.childNodes[1].textContent).to.eql('Entry B');
+        var group = getGroup(popupMenu, 'default');
+
+        expect(group.childNodes[0].textContent).to.eql('Entry A');
+        expect(group.childNodes[1].textContent).to.eql('Entry B');
       }
     ));
 
@@ -860,6 +971,31 @@ describe('features/popup', function() {
 
       expect(img).to.exist;
       expect(img.getAttribute('src')).to.eql(testImage);
+    }));
+
+
+    it('should NOT allow XSS via imageUrl', inject(function(popupMenu) {
+
+      // given
+      var testMenuProvider = {
+        getHeaderEntries: function() {
+          return [
+            {
+              id: '1',
+              imageUrl: '"><marquee />'
+            }
+          ];
+        },
+        getEntries: function() { return []; }
+      };
+
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+      // then
+      var injected = queryPopup(popupMenu, 'marquee');
+
+      expect(injected).not.to.exist;
     }));
 
 
@@ -1012,10 +1148,12 @@ describe('features/popup', function() {
       // given
       var clientRect = canvas._container.getBoundingClientRect();
 
-      var cursorPosition = { x: clientRect.left + 100, y: clientRect.top + 500 };
+      var y = clientRect.height - 40;
+
+      var cursorPosition = { x: clientRect.left + 100, y: clientRect.top + y };
 
       // when
-      popupMenu.open({}, 'custom-provider', { x: 100, y: 500, cursor: cursorPosition });
+      popupMenu.open({}, 'custom-provider', { x: 100, y: y, cursor: cursorPosition });
 
       var menu = popupMenu._current.container;
 
@@ -1025,7 +1163,7 @@ describe('features/popup', function() {
       };
 
       // then
-      expect(menu.offsetTop).to.equal(500 - menuDimensions.height);
+      expect(menu.offsetTop).to.be.closeTo(y - menuDimensions.height, 1);
     }));
 
 
@@ -1391,5 +1529,13 @@ function queryEntry(popupMenu, id) {
 }
 
 function queryPopup(popupMenu, selector) {
-  return domQuery(selector, popupMenu._current.container);
+  return domQuery(selector, getPopupContainer(popupMenu));
+}
+
+function getPopupContainer(popupMenu) {
+  return popupMenu._current.container;
+}
+
+function getGroup(popupMenu, groupName) {
+  return domQuery('[data-group="' + groupName + '"]', getPopupContainer(popupMenu));
 }
