@@ -58,7 +58,7 @@ describe('features/context-pad', function() {
     /**
      * @constructor
      *
-     * @param {any} [entriesOrUpdater]
+     * @param {*} [entriesOrUpdater]
      */
     function Provider(entriesOrUpdater) {
       this.getContextPadEntries = function(element) {
@@ -79,7 +79,7 @@ describe('features/context-pad', function() {
       // then
       expect(function() {
         contextPad.registerProvider(provider);
-      }).to.not.throw;
+      }).not.to.throw;
     }));
 
 
@@ -205,7 +205,7 @@ describe('features/context-pad', function() {
         var entries = contextPad.getEntries([]);
 
         // then
-        expect(entries.entryA).to.not.exist;
+        expect(entries.entryA).not.to.exist;
       }));
 
 
@@ -229,7 +229,7 @@ describe('features/context-pad', function() {
           var entries = contextPad.getEntries([]);
 
           // then
-          expect(entries.entryA).to.not.exist;
+          expect(entries.entryA).not.to.exist;
         }));
 
 
@@ -369,6 +369,53 @@ describe('features/context-pad', function() {
         expect(contextPad.isOpen([ shape2 ])).to.be.false;
         expect(contextPad.isOpen([ shape1, shape2 ])).to.be.true;
 
+      }));
+
+    });
+
+
+    describe('is shown', function() {
+
+      it('open', inject(function(canvas, contextPad) {
+
+        // given
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        // when
+        contextPad.open(shape);
+
+        // then
+        expect(contextPad.isShown()).to.be.true;
+      }));
+
+
+      it('open and hidden', inject(function(canvas, contextPad, eventBus) {
+
+        // given
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        // when
+        contextPad.open(shape);
+        eventBus.fire('canvas.viewbox.changing');
+
+        // then
+        expect(contextPad.isShown()).not.to.be.true;
+      }));
+
+
+      it('closed', inject(function(canvas, contextPad, eventBus) {
+
+        // given
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        // then
+        expect(contextPad.isShown()).not.to.be.true;
       }));
 
     });
@@ -795,6 +842,156 @@ describe('features/context-pad', function() {
 
       // then
       expect(event.__handled).to.be.true;
+    }));
+
+
+    it('should handle manually initiated drag', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({
+        id: 's1',
+        width: 100, height: 100,
+        x: 10, y: 10,
+        type: 'drag'
+      });
+
+      contextPad.open(shape);
+
+      var pad = contextPad.getPad(shape),
+          html = pad.html,
+          target = domQuery('[data-action=""]', html);
+
+      var event = globalEvent(target, { x: 0, y: 0 });
+
+      // when
+      var result = contextPad.triggerEntry('action.dragstart', 'dragstart', event);
+
+      // then
+      expect(event.__handled).to.be.true;
+      expect(result).to.eql('action.dragstart');
+    }));
+
+
+    it('should gracefully handle non-existing entry', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({
+        id: 's1',
+        width: 100, height: 100,
+        x: 10, y: 10,
+        type: 'drag'
+      });
+
+      contextPad.open(shape);
+
+      var pad = contextPad.getPad(shape),
+          html = pad.html,
+          target = domQuery('[data-action=""]', html);
+
+      var event = globalEvent(target, { x: 0, y: 0 });
+
+      // when
+      var result = contextPad.triggerEntry('NON_EXISTING_ENTRY', 'dragstart', event);
+
+      // then
+      expect(event.__handled).not.to.exist;
+      expect(result).not.to.exist;
+    }));
+
+
+    it('should gracefully handle non-existing action', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({
+        id: 's1',
+        width: 100, height: 100,
+        x: 10, y: 10,
+        type: 'drag'
+      });
+
+      contextPad.open(shape);
+
+      var pad = contextPad.getPad(shape),
+          html = pad.html,
+          target = domQuery('[data-action=""]', html);
+
+      var event = globalEvent(target, { x: 0, y: 0 });
+
+      // when
+      var result = contextPad.triggerEntry('action.dragstart', 'NON_EXISTING_ACTION', event);
+
+      // then
+      expect(event.__handled).not.to.exist;
+      expect(result).not.to.exist;
+    }));
+
+
+    it('should gracefully handle closed', inject(function(canvas, contextPad) {
+
+      // given
+      var event = globalEvent(document.body, { x: 0, y: 0 });
+
+      // when
+      var result = contextPad.triggerEntry('NON_EXISTING_ENTRY', 'dragstart', event);
+
+      // then
+      expect(event.__handled).not.to.exist;
+      expect(result).not.to.exist;
+    }));
+
+
+    it('should not handle events if contextPad is not shown', inject(function(canvas, contextPad, eventBus) {
+
+      // given
+      var shape = canvas.addShape({ id: 's1', width: 100, height: 100, x: 10, y: 10 });
+
+      contextPad.open(shape);
+
+      var pad = contextPad.getPad(shape),
+          html = pad.html,
+          target = domQuery('[data-action="action.c"]', html);
+
+      var event = globalEvent(target, { x: 0, y: 0 });
+      eventBus.fire('canvas.viewbox.changing');
+
+      // when
+      contextPad.trigger('click', event);
+
+      // then
+      expect(event.__handled).to.be.undefined;
+    }));
+
+  });
+
+
+  describe('event integration', function() {
+
+    beforeEach(bootstrapDiagram({ modules: [ contextPadModule, providerModule ] }));
+
+    it('should fire "contextPad.trigger"', inject(function(canvas, contextPad, eventBus) {
+
+      // given
+      var shape = canvas.addShape({ id: 's1', width: 100, height: 100, x: 10, y: 10 });
+      var triggerSpy = sinon.spy();
+
+      eventBus.on('contextPad.trigger', triggerSpy);
+
+      contextPad.open(shape);
+
+      var pad = contextPad.getPad(shape),
+          html = pad.html,
+          target = domQuery('[data-action="action.c"]', html);
+
+      var event = globalEvent(target, { x: 0, y: 0 });
+
+      // when
+      contextPad.trigger('click', event);
+
+      // then
+      const entry = contextPad._current.entries['action.c'];
+
+      expect(triggerSpy).to.have.been.calledOnce;
+      expect(triggerSpy.getCall(0).args[1]).to.eql({ entry, event });
     }));
 
   });

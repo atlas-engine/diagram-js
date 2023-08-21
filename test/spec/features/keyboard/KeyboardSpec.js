@@ -21,7 +21,7 @@ import { createKeyEvent } from 'test/util/KeyEvents';
 
 describe('features/keyboard', function() {
 
-  var TEST_KEY = 99;
+  var TEST_KEY = 'Numpad3';
 
   var defaultDiagramConfig = {
     modules: [
@@ -139,40 +139,109 @@ describe('features/keyboard', function() {
     }));
 
 
-    it('should not fire non-modifier event if target is input field', inject(
+    describe('should ignore input field targets', function() {
+
+      it('non-modifier event', inject(
+        function(keyboard, eventBus) {
+
+          // given
+          var eventBusSpy = sinon.spy(eventBus, 'fire');
+
+          var inputField = document.createElement('input');
+          testDiv.appendChild(inputField);
+
+          // when
+          keyboard._keyHandler({ key: TEST_KEY, target: inputField });
+          keyboard._keyHandler({ key: TEST_KEY, shiftKey: true, target: inputField });
+
+          // then
+          expect(eventBusSpy).to.not.be.called;
+        })
+      );
+
+      it('modifier event', inject(
+        function(keyboard, eventBus) {
+
+          // given
+          var eventBusSpy = sinon.spy(eventBus, 'fire');
+
+          var inputField = document.createElement('input');
+          testDiv.appendChild(inputField);
+
+          // when
+          keyboard._keyHandler({ key: TEST_KEY, metaKey: true, target: inputField });
+          keyboard._keyHandler({ key: TEST_KEY, ctrlKey: true, target: inputField });
+
+          // then
+          expect(eventBusSpy).to.not.be.called;
+        })
+      );
+
+    });
+
+
+    it('should ignore propagation stopped events', inject(
       function(keyboard, eventBus) {
 
         // given
-        var eventBusSpy = sinon.spy(eventBus, 'fire');
+        var keyListener = sinon.spy();
 
-        var inputField = document.createElement('input');
-        testDiv.appendChild(inputField);
+        keyboard.bind(testDiv);
+
+        eventBus.on('keyboard.keydown', keyListener);
+        eventBus.on('keyboard.keyup', keyListener);
+
+        var testEl = domify('<div tab-index="-1"></div>');
+
+        testEl.addEventListener('keydown', function(event) {
+          event.stopPropagation();
+        });
+
+        testEl.addEventListener('keyup', function(event) {
+          event.stopPropagation();
+        });
+
+        testDiv.appendChild(testEl);
 
         // when
-        keyboard._keyHandler({ key: TEST_KEY, target: inputField });
-        keyboard._keyHandler({ key: TEST_KEY, shiftKey: true, target: inputField });
+        dispatchKeyboardEvent(testEl, 'keydown');
+        dispatchKeyboardEvent(testEl, 'keyup');
 
         // then
-        expect(eventBusSpy).to.not.be.called;
+        expect(keyListener).not.to.be.called;
       })
     );
 
 
-    it('should not fire modifier event if target is input field', inject(
+    it('should ignore default prevented events', inject(
       function(keyboard, eventBus) {
 
         // given
-        var eventBusSpy = sinon.spy(eventBus, 'fire');
+        var keyListener = sinon.spy();
 
-        var inputField = document.createElement('input');
-        testDiv.appendChild(inputField);
+        keyboard.bind(testDiv);
+
+        eventBus.on('keyboard.keydown', keyListener);
+        eventBus.on('keyboard.keyup', keyListener);
+
+        var testEl = domify('<div tab-index="-1"></div>');
+
+        testEl.addEventListener('keydown', function(event) {
+          event.preventDefault();
+        });
+
+        testEl.addEventListener('keyup', function(event) {
+          event.preventDefault();
+        });
+
+        testDiv.appendChild(testEl);
 
         // when
-        keyboard._keyHandler({ key: TEST_KEY, metaKey: true, target: inputField });
-        keyboard._keyHandler({ key: TEST_KEY, ctrlKey: true, target: inputField });
+        dispatchKeyboardEvent(testEl, 'keydown');
+        dispatchKeyboardEvent(testEl, 'keyup');
 
         // then
-        expect(eventBusSpy).to.not.be.called;
+        expect(keyListener).not.to.be.called;
       })
     );
 
@@ -442,15 +511,7 @@ describe('features/keyboard', function() {
 // helpers //////////
 
 function dispatchKeyboardEvent(target, type) {
-  var event;
-
-  try {
-    event = new KeyboardEvent(type);
-  } catch (e) {
-    event = document.createEvent('KeyboardEvent');
-
-    event.initEvent(type, true, false);
-  }
+  var event = createKeyEvent('KeyA', { type });
 
   target.dispatchEvent(event);
 }

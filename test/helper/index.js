@@ -16,6 +16,7 @@ var OPTIONS, DIAGRAM_JS;
  *
  * @example
  *
+ * ```javascript
  * describe(function() {
  *
  *   var mockEvents;
@@ -29,9 +30,10 @@ var OPTIONS, DIAGRAM_JS;
  *   }));
  *
  * });
+ * ```
  *
- * @param  {Object} (options) optional options to be passed to the diagram upon instantiation
- * @param  {Object|Function} locals  the local overrides to be used by the diagram or a function that produces them
+ * @param {Object} (options) optional options to be passed to the diagram upon instantiation
+ * @param {Object|Function} locals  the local overrides to be used by the diagram or a function that produces them
  * @return {Function}         a function to be passed to beforeEach
  */
 export function bootstrapDiagram(options, locals) {
@@ -100,6 +102,7 @@ export function bootstrapDiagram(options, locals) {
  *
  * @example
  *
+ * ```javascript
  * describe(function() {
  *
  *   var mockEvents;
@@ -111,8 +114,9 @@ export function bootstrapDiagram(options, locals) {
  *   }));
  *
  * });
+ * ```
  *
- * @param  {Function} fn the function to inject to
+ * @param {Function} fn the function to inject to
  * @return {Function} a function that can be passed to it to carry out the injection
  */
 export function inject(fn) {
