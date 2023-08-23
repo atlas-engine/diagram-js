@@ -6,6 +6,177 @@ All notable changes to [diagram-js](https://github.com/bpmn-io/diagram-js) are d
 
 _**Note:** Yet to be released changes appear here._
 
+## 12.2.0
+
+* `FEAT`: allow to provide html for popup menu entries icons ([#790](https://github.com/bpmn-io/diagram-js/pull/790))
+
+## 12.1.1
+
+* `FIX`: make `bio-dts` a dev dependency
+
+## 12.1.0
+
+* `FEAT`: centralize `isConnection`, `isLabel` and `isRoot` checks ([#783](https://github.com/bpmn-io/diagram-js/pull/783))
+* `FIX`: do not attach labels ([#782](https://github.com/bpmn-io/diagram-js/pull/782))
+* `FIX`: include entry id in `popupMenu.trigger` event ([#785](https://github.com/bpmn-io/diagram-js/pull/785))
+* `CHORE`: fix JSDoc types ([#783](https://github.com/bpmn-io/diagram-js/pull/783))
+
+## 12.0.2
+
+* `CHORE`: fix various JSDoc comments ([#780](https://github.com/bpmn-io/diagram-js/pull/780), [#781](https://github.com/bpmn-io/diagram-js/pull/781))
+
+## 12.0.1
+
+* `FIX`: export types as `type` ([#779](https://github.com/bpmn-io/diagram-js/pull/779))
+
+## 12.0.0
+
+* `FEAT`: rework and complete type definitions (https://github.com/bpmn-io/diagram-js/pull/775)
+* `FEAT`: rework `model`
+
+### Breaking Changes
+
+* Model elements must be created through factory functions exposed by the `model` package.
+* Certain interface like `*Provider` types (`PopupMenuProvider`, `PaletteProvider`) are actual interfaces now
+
+## 11.13.1
+
+* `FIX`: fix type declaration for `ElementFactory` ([#776](https://github.com/bpmn-io/diagram-js/pull/776))
+
+## 11.13.0
+
+* `FEAT`: fire `popupMenu.trigger`, `palette.trigger` and `contextPad.trigger` events ([#772](https://github.com/bpmn-io/diagram-js/pull/772))
+
+## 11.12.0
+
+* `DOCS`: add additional parameters to `EventCallback` type ([#759](https://github.com/bpmn-io/diagram-js/pull/759))
+* `CHORE`: adjust type declarations to allow augmentation ([#757](https://github.com/bpmn-io/diagram-js/pull/757))
+
+## 11.11.0
+
+* `FEAT`: add `translate` typings ([#756](https://github.com/bpmn-io/diagram-js/pull/756))
+* `FEAT`: support select after replacement ([#755](https://github.com/bpmn-io/diagram-js/pull/756))
+
+## 11.10.0
+
+* `FEAT`: add TypeScript declarations for core components ([#732](https://github.com/bpmn-io/diagram-js/pull/732))
+* `DEPS`: update to `didi@9.0.2`
+
+## 11.9.1
+
+* `FIX`: restore undo/redo shortcuts on some international keyboards ([#749](https://github.com/bpmn-io/diagram-js/pull/749))
+
+## 11.9.0
+
+* `FEAT`: allow popup menu entries to be initially hidden ([#748](https://github.com/bpmn-io/diagram-js/pull/748))
+* `FIX`: filter popup menu entries eagerly to prevent flickering ([#748](https://github.com/bpmn-io/diagram-js/pull/748))
+* `FIX`: prevent `Escape` from triggering closing twice ([#748](https://github.com/bpmn-io/diagram-js/pull/748))
+
+## 11.8.0
+
+* `FEAT`: make outline more prominent ([#747](https://github.com/bpmn-io/diagram-js/pull/747))
+* `FEAT`: add ability to render connections with rounded corners ([#747](https://github.com/bpmn-io/diagram-js/pull/747))
+
+## 11.7.0
+
+* `FEAT`: allow additional search terms for popup menu entries ([#745](https://github.com/bpmn-io/diagram-js/pull/745))
+* `FIX`: improve popup menu set off off from background ([#743](https://github.com/bpmn-io/diagram-js/pull/743))
+
+## 11.6.0
+
+* `FEAT`: allow to trigger palette entries by ID ([#741](https://github.com/bpmn-io/diagram-js/pull/741))
+* `FIX`: make popup menu icons decorational ([`50eb3d7`](https://github.com/bpmn-io/diagram-js/commit/50eb3d7))
+* `FIX`: align elements with coordinates around `0` ([#740](https://github.com/bpmn-io/diagram-js/pull/740))
+
+## 11.5.0
+
+* `FEAT`: allow `dragstart` from popup menu entries ([#731](https://github.com/bpmn-io/diagram-js/pull/731))
+
+## 11.4.4
+
+* `DEPS`: update to `@bpmn-io/diagram-js-ui@0.2.2`
+
+## 11.4.3
+
+* `FIX`: prevent canvas scrolling inside popup menu ([#729](https://github.com/bpmn-io/diagram-js/issues/729))
+
+## 11.4.2
+
+* `FIX`: render popup menu inside `djs-container` ([#728](https://github.com/bpmn-io/diagram-js/pull/728))
+* `FIX`: correct popup menu overflow ([#727](https://github.com/bpmn-io/diagram-js/pull/727))
+* `FIX`: drop popup menu backdrop border ([`e1327caf`](https://github.com/bpmn-io/diagram-js/commit/e1327caf0770038cba535d947742e0feecc39c98))
+
+## 11.4.1
+
+* `FIX`: gracefully handle context pad trigger errors
+
+## 11.4.0
+
+* `FEAT`: add `Overlays#isShown` utility ([#719](https://github.com/bpmn-io/diagram-js/pull/719))
+* `FEAT`: add `ContextPad#isShown` utility ([#719](https://github.com/bpmn-io/diagram-js/pull/719))
+* `FEAT`: allow to trigger context pad entries by ID ([#719](https://github.com/bpmn-io/diagram-js/pull/719))
+* `FIX`: make context pad triggering fail-safe ([#719](https://github.com/bpmn-io/diagram-js/pull/719))
+
+## 11.3.0
+
+* `FEAT`: fire `popupMenu.opened` and `popupMenu.closed` events ([#718](https://github.com/bpmn-io/diagram-js/pull/718))
+* `FIX`: do not search popup menu entries by id ([#720](https://github.com/bpmn-io/diagram-js/pull/720))
+
+## 11.2.1
+
+* `FIX`: correct popup menu icon to label spacing ([`da5dac5`](https://github.com/bpmn-io/diagram-js/commit/da5dac5))
+
+## 11.2.0
+
+* `FEAT`: consistently truncate popup menu elements ([#717](https://github.com/bpmn-io/diagram-js/pull/717))
+* `FIX`: account for popup menu entry `title` meta-data ([#717](https://github.com/bpmn-io/diagram-js/pull/717))
+* `FIX`: apply popup menu element margins only where needed ([#717](https://github.com/bpmn-io/diagram-js/pull/717))
+* `CHORE`: improve popup menu theming ([#717](https://github.com/bpmn-io/diagram-js/pull/717))
+
+## 11.1.1
+
+* `FEAT`: keep popup menu class structure aligned with `diagram-js@10` ([`f78a1a57`](https://github.com/bpmn-io/diagram-js/commit/f78a1a57e6dd7ca31933f2467ee56ba6f7b2fab9))
+* `FIX`: remove popup menu container on close ([`e1df3edd`](https://github.com/bpmn-io/diagram-js/commit/e1df3eddf58f96dfabef8dc2b6e576966e89c803))
+* `FIX`: make actual popup menu keyboard selectable ([`9fda6b0f`](https://github.com/bpmn-io/diagram-js/commit/9fda6b0f9d32bfc8d13b7dc1062f43c37b65bf57))
+* `FIX`: apply consistent popup-menu spacing ([`4d4ab8e1`](https://github.com/bpmn-io/diagram-js/commit/4d4ab8e1cfc91b805db3f90c7fd36bd2626fdfca))
+
+## 11.1.0
+
+* `FEAT`: keyboard handles events on bubble phase instead of capture phase ([#708](https://github.com/bpmn-io/diagram-js/pull/708))
+* `FEAT`: keyboard ignores events that got their propagation stopped or their default prevented ([#708](https://github.com/bpmn-io/diagram-js/pull/708))
+* `FIX`: popup menu remains open after clicking on it ([#702](https://github.com/bpmn-io/diagram-js/issues/702))
+* `FIX`: correctly listen for <ESCAPE> to cancel dragging ([#709](https://github.com/bpmn-io/diagram-js/pull/709))
+* `FIX`: ensure arrow keys navigation works consistently in popup menu ([#701](https://github.com/bpmn-io/diagram-js/issues/701))
+* `FIX`: handle popup menu header selection properly ([#711](https://github.com/bpmn-io/diagram-js/pull/711))
+* `CHORE`: add `djs-popup-` prefix to popup menu classes ([#703](https://github.com/bpmn-io/diagram-js/issues/703))
+
+## 11.0.0
+
+* `FEAT`: drop `KeyboardEvent#keyCode` in favor of `code` ([#681](https://github.com/bpmn-io/diagram-js/pull/681))
+* `FEAT`: introduction of `.djs-parent` class to canvas and popup menu root ([#687](https://github.com/bpmn-io/diagram-js/pull/687))
+* `FEAT`: new popupMenu UI featuring menu and group titles, search, entry descriptions and documentation urls ([#686](https://github.com/bpmn-io/diagram-js/issues/686), [#695](https://github.com/bpmn-io/diagram-js/issues/695), [#697](https://github.com/bpmn-io/diagram-js/pull/697), [#699](https://github.com/bpmn-io/diagram-js/pull/699))
+* `FEAT`: provide UI utilities through `diagram-js/lib/ui` ([#692](https://github.com/bpmn-io/diagram-js/pull/692))
+* `DOCS`: update popup menu provider example ([#678](https://github.com/bpmn-io/diagram-js/pull/678))
+* `DOCS`: correct `ElementRegistry` method signatures ([#698](https://github.com/bpmn-io/diagram-js/pull/698))
+* `DEPS`: bump utility dependencies
+
+### Breaking Changes
+
+* HTML structure and CSS classes of the popup menu changed in the context of [#687](https://github.com/bpmn-io/diagram-js/pull/687). Ensure alignment with the new structure in your custom implementation.
+* There is no longer a single root (`.djs-container`). The global selector for both the canvas and popup menu roots is now `.djs-parent`.
+* Keyboard-related features no longer use `KeyboardEvent#keyCode`.
+  Use a polyfill (e.g. [keyboardevent-key-polyfill](https://www.npmjs.com/package/keyboardevent-key-polyfill)) if you need to support old browsers.
+
+## 10.0.0
+
+* `FIX`: consider moving and non-moving attachers when using space tool ([#480](https://github.com/bpmn-io/diagram-js/pull/480))
+* `FIX`: move external labels with moving shapes/connections ([#480](https://github.com/bpmn-io/diagram-js/pull/480))
+* `FIX`: allow label behavior for laid-out connections ([#480](https://github.com/bpmn-io/diagram-js/pull/480))
+
+### Breaking Changes
+
+* label behavior for laid-out connection is not disallowed anymore
+
 ## 9.1.0
 
 * `DEPS`: bump utility dependencies
@@ -13,6 +184,7 @@ _**Note:** Yet to be released changes appear here._
 ## 9.0.0
 
 * `FEAT`: use ES2018 syntax ([#674](https://github.com/bpmn-io/bpmn-js/pull/674))
+* `DEPS`: update to `didi@9`
 
 ### Breaking Changes
 

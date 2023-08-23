@@ -1,5 +1,9 @@
 import { pick } from 'min-dash';
 
+/**
+ * @typedef {import('../../lib/util/Types').Point} Point
+ */
+
 var POSITION_ATTRS = [ 'x', 'y' ];
 
 function extractPoints(point) {
@@ -23,7 +27,9 @@ export default function(chai, utils) {
    *
    * @example
    *
+   * ```javascript
    * expect(connection).to.have.waypoints([ { x: 100, y: 100 }, { x: 0, y: 0 } ]);
+   * ```
    *
    * @param {Connection|Array<Point>} exp
    */
@@ -59,7 +65,9 @@ export default function(chai, utils) {
    *
    * @example
    *
+   * ```javascript
    * expect(connection).to.have.startDocking({ x: 100, y: 100 });
+   * ```
    *
    * @param {Point} exp
    */
@@ -92,7 +100,9 @@ export default function(chai, utils) {
    *
    * @example
    *
+   * ```javascript
    * expect(connection).to.have.endDocking({ x: 100, y: 100 });
+   * ```
    *
    * @param {Point} exp
    */

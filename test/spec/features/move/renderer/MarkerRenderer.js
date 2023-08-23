@@ -16,6 +16,10 @@ import {
   createLine
 } from 'lib//util/RenderUtil';
 
+/**
+ * @typedef {import('../../model').Connection} Connection
+ */
+
 var HIGH_PRIORITY = 3000;
 
 var CONNECTION_STYLE = {
@@ -118,7 +122,7 @@ MarkerRenderer.prototype.addMarker = function(gfx, markerType) {
  *
  * @param {string} id
  *
- * @returns {string}
+ * @return {string}
  */
 function idToReference(id) {
   return 'url(#' + id + ')';
@@ -127,10 +131,10 @@ function idToReference(id) {
 /**
  * Check wether given connection has marker of given type.
  *
- * @param {djs.model.connection} connection
+ * @param {Connection} connection
  * @param {string} markerType
  *
- * @returns {boolean}
+ * @return {boolean}
  */
 function hasMarker(connection, markerType) {
   return connection.marker && connection.marker[ markerType.split('-').pop() ];

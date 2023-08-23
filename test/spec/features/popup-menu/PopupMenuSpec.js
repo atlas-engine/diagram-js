@@ -23,7 +23,7 @@ import popupMenuModule from 'lib/features/popup-menu';
 import modelingModule from 'lib/features/modeling';
 
 
-describe('features/popup', function() {
+describe('features/popup-menu', function() {
 
   beforeEach(bootstrapDiagram({
     modules: [
@@ -49,7 +49,7 @@ describe('features/popup', function() {
 
   describe('bootstrap', function() {
 
-    it('overlay to be defined', inject(function(popupMenu) {
+    it('should expose <popupMenu> service', inject(function(popupMenu) {
       expect(popupMenu).to.exist;
       expect(popupMenu.open).to.exist;
     }));
@@ -174,6 +174,7 @@ describe('features/popup', function() {
       expect(popupMenu.isEmpty({}, 'empty-menu')).to.be.true;
     }));
 
+
     it('should return true if there are no providers', inject(function(popupMenu) {
 
       // then
@@ -207,18 +208,18 @@ describe('features/popup', function() {
         // then
         expect(function() {
           popupMenu.isEmpty({});
-        }).to.throw('providerId parameter is missing');
+        }).to.throw('provider ID is missing');
       }
     ));
 
 
-    it('should throw error when element is missing', inject(
+    it('should throw error when target is missing', inject(
       function(popupMenu) {
 
         // then
         expect(function() {
           popupMenu.isEmpty();
-        }).to.throw('element parameter is missing');
+        }).to.throw('target is missing');
       }
     ));
 
@@ -232,12 +233,15 @@ describe('features/popup', function() {
     }));
 
 
-    it('should open', inject(function(popupMenu, eventBus) {
+    it('should open', inject(async function(popupMenu, eventBus) {
 
       // given
       var openSpy = sinon.spy();
+      var openedSpy = sinon.spy();
 
       eventBus.on('popupMenu.open', openSpy);
+      eventBus.on('popupMenu.opened', openedSpy);
+
 
       // when
       popupMenu.open({}, 'menu', { x: 100, y: 100 });
@@ -245,28 +249,46 @@ describe('features/popup', function() {
       // then
       expect(popupMenu._current).to.exist;
       expect(openSpy).to.have.been.calledOnce;
+
+      await whenStable();
+      expect(openedSpy).to.have.been.calledOnce;
     }));
 
 
-    it('should attach popup to html', inject(function(popupMenu) {
+    it('should scaffold basic structure', inject(function(popupMenu, canvas) {
 
       // when
-      popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
-      var container = popupMenu._current.container;
+      var container = getPopupContainer();
 
       // then
-      expect(domClasses(container).has('djs-popup')).to.be.true;
-      expect(domClasses(container).has('menu')).to.be.true;
+      expect(domClasses(container).has('djs-popup-parent')).to.be.true;
+      expect(queryPopupAll('.djs-popup-backdrop')).to.have.length(1);
+      expect(queryPopupAll('.djs-popup')).to.have.length(1);
+
+      expect(domClasses(queryPopup('.djs-popup')).has('menu')).to.be.true;
+    }));
+
+
+    it('should attach to diagram container', inject(function(popupMenu, canvas) {
+
+      // when
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
+
+      var container = getPopupContainer();
+
+      // then
+      expect(container.parentNode).to.equal(canvas.getContainer());
     }));
 
 
     it('should be visible even if no `position.cursor` was passed', inject(function(popupMenu) {
 
       // when
-      popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
-      var container = popupMenu._current.container;
+      var container = getPopupContainer();
 
       // then
       expect(getComputedStyle(container).visibility).not.to.eql('hidden');
@@ -276,10 +298,10 @@ describe('features/popup', function() {
     it('should add entries to menu', inject(function(popupMenu) {
 
       // when
-      popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
       // then
-      var domEntry = queryEntry(popupMenu, 'entry1');
+      var domEntry = queryEntry('entry1');
 
       expect(domEntry.textContent).to.eql('foo');
     }));
@@ -299,10 +321,10 @@ describe('features/popup', function() {
         getHeaderEntries: function() {}
       });
 
-      popupMenu.open({}, 'item-menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'item-menu', { x: 100, y: 100 });
 
       // then
-      var group = getGroup(popupMenu, 'default');
+      var group = getGroup('default');
       var entry1 = group.childNodes[0];
       var entry2 = group.childNodes[1];
       var entry3 = group.childNodes[2];
@@ -332,7 +354,7 @@ describe('features/popup', function() {
       // then
       expect(function() {
         popupMenu.open({}, 'foo', { x: 100, y: 100 });
-      }).to.throw('No registered providers for: foo');
+      }).to.throw('provider for <foo> not found');
 
     }));
 
@@ -343,7 +365,7 @@ describe('features/popup', function() {
 
       expect(function() {
         popupMenu.open();
-      }).to.throw('Element is missing');
+      }).to.throw('target is missing');
 
     }));
 
@@ -366,10 +388,10 @@ describe('features/popup', function() {
         });
 
         // when
-        popupMenu.open({}, 'group-menu' ,{ x: 100, y: 100 });
+        popupMenu.open({}, 'group-menu', { x: 100, y: 100 });
 
         // then
-        var parent = queryPopup(popupMenu, '.djs-popup-body'),
+        var parent = queryPopup('.djs-popup-results'),
             group1 = parent.childNodes[0],
             group2 = parent.childNodes[1],
             group3 = parent.childNodes[2];
@@ -400,15 +422,15 @@ describe('features/popup', function() {
         });
 
         // when
-        popupMenu.open({}, 'group-menu' ,{ x: 100, y: 100 });
+        popupMenu.open({}, 'group-menu', { x: 100, y: 100 });
 
         // then
-        var parent = queryPopup(popupMenu, '.djs-popup-body'),
+        var parent = queryPopup('.djs-popup-results'),
             group1 = parent.childNodes[0];
 
-        expect(parent.childNodes).to.have.lengthOf(1);
+        expect(parent.children).to.have.lengthOf(1);
         expect(group1.dataset).to.have.property('group', 'default');
-        expect(group1.childNodes).to.have.lengthOf(5);
+        expect(group1.children).to.have.lengthOf(5);
       }));
 
 
@@ -424,13 +446,61 @@ describe('features/popup', function() {
         });
 
         // when
-        popupMenu.open({}, 'group-menu' ,{ x: 100, y: 100 });
+        popupMenu.open({}, 'group-menu', { x: 100, y: 100 });
 
         // then
-        var injected = queryPopup(popupMenu, 'marquee');
+        var injected = queryPopup('marquee');
 
         expect(injected).not.to.exist;
       }));
+
+
+      it('should display group name if provided', inject(function(popupMenu) {
+
+        // given
+        popupMenu.registerProvider('group-menu', {
+          getEntries: function() {
+            return [
+              { id: 'save', group: { name: 'file' , id: 'file' } },
+              { id: 'load', group: { name: 'file' , id: 'file' } },
+              { id: 'undo', group: { name: 'command' , id: 'command' } },
+              { id: 'redo', group: { name: 'command' , id: 'command' } },
+            ];
+          } });
+
+        // when
+        popupMenu.open({}, 'group-menu', { x: 100, y: 100 });
+
+        const entryHeaders = queryPopupAll('.entry-header');
+
+        // then
+        expect(entryHeaders).to.have.lengthOf(2);
+        expect(entryHeaders[0].textContent).to.eql('file');
+        expect(entryHeaders[1].textContent).to.eql('command');
+      }));
+
+
+      it('should support legacy groups (type = string)', inject(function(popupMenu) {
+
+        // given
+        popupMenu.registerProvider('group-menu', {
+          getEntries: function() {
+            return [
+              { id: 'save', group: 'file' },
+              { id: 'load', group: 'file' }
+            ];
+          } });
+
+        // when
+        popupMenu.open({}, 'group-menu', { x: 100, y: 100 });
+
+        const entryHeaders = queryPopup('[data-group="file"]');
+
+        // then
+        expect(entryHeaders).to.exist;
+        expect(entryHeaders.children).to.have.lengthOf(2);
+      }));
+
     });
 
 
@@ -453,7 +523,8 @@ describe('features/popup', function() {
         // then
 
         expect(popupMenu._current).to.exist;
-        expect(popupMenu._current.entries).to.have.keys('entry1', 'entry2', 'entry3');
+        expect(popupMenu._current.headerEntries).to.have.keys('entry1');
+        expect(popupMenu._current.entries).to.have.keys('entry2', 'entry3');
       }));
 
 
@@ -469,35 +540,64 @@ describe('features/popup', function() {
 
         // then
         expect(popupMenu._current).to.exist;
-        expect(popupMenu._current.entries).to.have.keys('entryA', 'entryB');
+        expect(popupMenu._current.entries).to.have.keys('entryB');
+        expect(popupMenu._current.headerEntries).to.have.keys('entryA');
       }));
+
     });
+
   });
+
 
   describe('#close', function() {
 
     beforeEach(inject(function(popupMenu) {
       popupMenu.registerProvider('menu', menuProvider);
-      popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
     }));
 
 
-    it('should close', inject(function(popupMenu, eventBus) {
+    it('should close', inject(async function(popupMenu, eventBus) {
 
       // given
       var closeSpy = sinon.spy();
+      var closedSpy = sinon.spy();
 
       eventBus.on('popupMenu.close', closeSpy);
+      eventBus.on('popupMenu.closed', closedSpy);
 
       // when
+      await whenStable();
       popupMenu.close();
 
       // then
       var open = popupMenu.isOpen();
 
       expect(open).to.be.false;
+      expect(closeSpy).to.have.been.calledOnce;
+      expect(closedSpy).to.have.been.calledOnce;
+    }));
+
+
+    it('should remove container', inject(function(popupMenu, eventBus) {
+
+      // given
+      var closeSpy = sinon.spy();
+      var container = getPopupContainer();
+
+      eventBus.on('popupMenu.close', closeSpy);
+
+      // assume
+      expect(container.parentNode).to.exist;
+
+      // when
+      popupMenu.close();
+
+      // then
+      expect(popupMenu.isOpen()).to.be.false;
 
       expect(closeSpy).to.have.been.calledOnce;
+      expect(container.parentNode).not.to.exist;
     }));
 
 
@@ -531,7 +631,7 @@ describe('features/popup', function() {
 
       // when
       popupMenu.registerProvider('menu', menuProvider);
-      popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
       // then
       expect(popupMenu.isOpen()).to.be.true;
@@ -542,7 +642,7 @@ describe('features/popup', function() {
 
       // given
       popupMenu.registerProvider('menu', menuProvider);
-      popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
       // when
       popupMenu.close();
@@ -578,19 +678,153 @@ describe('features/popup', function() {
               }
             }
           ];
+        },
+        getHeaderEntries: function() {
+          return [
+            {
+              id: '3',
+              label: 'Entry 3',
+              className: 'Entry_3',
+              action: function(event, entry) {
+                return 'Entry 3';
+              }
+            }
+          ];
         }
       });
 
-      popupMenu.open({}, 'test-menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
-      var entry = queryPopup(popupMenu, '.Entry_2');
+      var entry = queryEntry('2');
+      var headerEntry = queryEntry('3');
 
       // when
-      var trigger = popupMenu.trigger(globalEvent(entry, { x: 0, y: 0 }));
+      var triggerEntry = popupMenu.trigger(globalEvent(entry, { x: 0, y: 0 }));
+      var triggerHeaderEntry = popupMenu.trigger(globalEvent(headerEntry, { x: 0, y: 0 }));
 
       // then
-      expect(trigger).to.eql('Entry 2');
+      expect(triggerEntry).to.eql('Entry 2');
+      expect(triggerHeaderEntry).to.eql('Entry 3');
     }));
+
+
+    describe('complex handler', function() {
+
+      it('should trigger click', inject(function(popupMenu) {
+
+        // given
+        popupMenu.registerProvider('test-menu', {
+          getEntries: function() {
+            return [
+              {
+                id: '1',
+                label: 'Entry 1',
+                className: 'Entry_1',
+                action: {
+                  click: () => 'Entry 1 click',
+                  dragstart: () => 'Entry 1 dragstart'
+                }
+              }
+            ];
+          },
+          getHeaderEntries: function() {
+            return [
+              {
+                id: '2',
+                label: 'Entry 2',
+                className: 'Entry_2',
+                action: {
+                  click: () => 'Entry 2 click'
+                }
+              }
+            ];
+          }
+        });
+
+        popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+        var entry = queryEntry('1');
+        var headerEntry = queryEntry('2');
+
+        // when
+        var triggerEntry = popupMenu.trigger(globalEvent(entry, { x: 0, y: 0 }));
+        var triggerHeaderEntry = popupMenu.trigger(globalEvent(headerEntry, { x: 0, y: 0 }));
+
+        // then
+        expect(triggerEntry).to.eql('Entry 1 click');
+        expect(triggerHeaderEntry).to.eql('Entry 2 click');
+      }));
+
+
+      it('should trigger dragstart', inject(function(popupMenu) {
+
+        // given
+        popupMenu.registerProvider('test-menu', {
+          getEntries: function() {
+            return [
+              {
+                id: '1',
+                label: 'Entry 1',
+                className: 'Entry_1',
+                action: {
+                  click: () => 'Entry 1 click',
+                  dragstart: () => 'Entry 1 dragstart'
+                }
+              }
+            ];
+          }
+        });
+
+        popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+        var entry = queryEntry('1');
+
+        // when
+        var triggerEntry = popupMenu.trigger(globalEvent(entry, { x: 0, y: 0 }), null, 'dragstart');
+
+        // then
+        expect(triggerEntry).to.eql('Entry 1 dragstart');
+      }));
+
+    });
+
+  });
+
+
+  describe('events integration', function() {
+
+    it('should fire "popupMenu.trigger"', inject(function(popupMenu, eventBus) {
+
+      // given
+      var triggerSpy = sinon.spy();
+      eventBus.on('popupMenu.trigger', triggerSpy);
+
+      popupMenu.registerProvider('test-menu', {
+        getEntries: function() {
+          return [ {
+            id: '1',
+            label: 'Entry 1',
+            action: () => {}
+          } ];
+        }
+      });
+
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+      var entry = queryEntry('1');
+      var event = globalEvent(entry, { x: 0, y: 0 });
+
+      // when
+      popupMenu.trigger(event);
+
+      // then
+      expect(triggerSpy).to.have.been.calledOnce;
+      expect(triggerSpy.getCall(0).args[1]).to.eql({
+        entry: { ...popupMenu._getEntry('1'), id: '1' },
+        event
+      });
+    }));
+
 
   });
 
@@ -614,8 +848,8 @@ describe('features/popup', function() {
       popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
       // then
-      var first = queryPopup(popupMenu, '.plain'),
-          second = queryPopup(popupMenu, '.updating');
+      var first = queryPopup('.plain'),
+          second = queryPopup('.updating');
 
       expect(first).to.exist;
       expect(second).to.exist;
@@ -637,7 +871,7 @@ describe('features/popup', function() {
       popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
       // then
-      var element = queryPopup(popupMenu, '.header');
+      var element = queryPopup('.header');
 
       expect(element).to.exist;
     }));
@@ -660,9 +894,11 @@ describe('features/popup', function() {
       popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
       // then
-      var element = queryPopup(popupMenu, '.special-entry');
-
+      var element = queryEntry('entryA');
       expect(element).to.exist;
+
+      var name = domQuery('.djs-popup-entry-name', element);
+      expect(domClasses(name).contains('special-entry')).to.be.true;
     }));
 
 
@@ -694,12 +930,13 @@ describe('features/popup', function() {
 
       afterEach(sinon.restore);
 
+
       it('should close menu (contextPad.close)', inject(function(popupMenu, eventBus) {
 
         // given
         popupMenu.registerProvider('menu', menuProvider);
 
-        popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+        popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
         // when
         eventBus.fire('contextPad.close');
@@ -716,7 +953,7 @@ describe('features/popup', function() {
         // given
         popupMenu.registerProvider('menu', menuProvider);
 
-        popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+        popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
         // when
         eventBus.fire('canvas.viewbox.changing');
@@ -734,7 +971,7 @@ describe('features/popup', function() {
           // given
           popupMenu.registerProvider('menu', menuProvider);
 
-          popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+          popupMenu.open({}, 'menu', { x: 100, y: 100 });
           popupMenu.close();
 
           var spy = sinon.spy(popupMenu, 'close');
@@ -752,7 +989,7 @@ describe('features/popup', function() {
   });
 
 
-  describe('menu styling', function() {
+  describe('entries', function() {
 
     it('should add standard class to entry', inject(function(popupMenu) {
 
@@ -769,12 +1006,14 @@ describe('features/popup', function() {
       popupMenu.registerProvider('test-menu', testMenuProvider);
 
       // when
-      popupMenu.open({}, 'test-menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
       // then
-      var elements = domQueryAll('.entry', popupMenu._current.container);
+      var elements = queryPopupAll('.entry');
 
-      expect(elements.length).to.eql(2);
+      expect(elements).to.have.length(2);
+      expect(elements[0]).to.equal(queryEntry('1'));
+      expect(elements[1]).to.equal(queryEntry('2'));
     }));
 
 
@@ -800,13 +1039,14 @@ describe('features/popup', function() {
       popupMenu.registerProvider('test-menu', testMenuProvider);
 
       // when
-      popupMenu.open({}, 'test-menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
       // then
-      var element = queryPopup(popupMenu, '.special-entry');
-
+      var element = queryEntry('2');
       expect(element.textContent).to.eql('Entry 2 - special');
-      expect(element.className).to.eql('entry special-entry cls2 cls3');
+
+      var name = domQuery('.djs-popup-entry-name', element);
+      expect(name.className).to.eql('djs-popup-entry-name special-entry cls2 cls3');
     }));
 
 
@@ -828,15 +1068,226 @@ describe('features/popup', function() {
       popupMenu.registerProvider('test-menu', testMenuProvider);
 
       // when
-      popupMenu.open({}, 'test-menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
-      var popupBody = queryPopup(popupMenu, '.djs-popup-body');
-      var popupHeader = queryPopup(popupMenu, '.djs-popup-header');
+      var popupBody = queryPopup('.djs-popup-body');
+      var popupHeader = queryPopup('.djs-popup-header');
 
       // then
-      expect(domQueryAll('.entry', popupBody).length).to.eql(2);
-      expect(domQueryAll('.entry', popupHeader).length).to.eql(1);
+      expect(domQueryAll('.djs-popup-body .entry', popupBody)).to.have.length(2);
+      expect(domQueryAll('.djs-popup-header .entry', popupHeader)).to.have.length(1);
     }));
+
+
+    it('should add an image if specified', inject(function(popupMenu) {
+
+      // given
+      var testMenuProvider = {
+        getEntries: function() {
+          return [
+            {
+              id: '1',
+              imageUrl: testImage,
+              className: 'image-1'
+            }
+          ];
+        },
+        getHeaderEntries: function() { return []; }
+      };
+
+      // when
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+      // then
+      var img = queryPopup('.image-1 img');
+
+      expect(img).to.exist;
+      expect(img.getAttribute('src')).to.eql(testImage);
+    }));
+
+
+    it('should add icon as html if specified', inject(function(popupMenu) {
+
+      // given
+      var testMenuProvider = {
+        getEntries: function() {
+          return [
+            {
+              id: '1',
+              imageHtml: '<svg height="100" width="100"><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" /></svg>',
+              className: 'image-1'
+            }
+          ];
+        },
+        getHeaderEntries: function() { return []; }
+      };
+
+      // when
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+      // then
+      var svg = queryPopup('.image-1 svg');
+      expect(svg).to.exist;
+    }));
+
+
+    it('should NOT allow XSS via imageUrl', inject(function(popupMenu) {
+
+      // given
+      var testMenuProvider = {
+        getEntries: function() {
+          return [
+            {
+              id: '1',
+              imageUrl: testImage,
+              className: 'image-1'
+            }
+          ];
+        },
+        getHeaderEntries: function() { return []; }
+      };
+
+      // when
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+      // then
+      var injected = queryPopup('marquee');
+      expect(injected).not.to.exist;
+    }));
+
+
+    it('should add description if specified', inject(function(popupMenu) {
+
+      // given
+      var testMenuProvider = {
+        getEntries: function() {
+          return [
+            {
+              id: '1',
+              description: 'This is a description'
+            }
+          ];
+        },
+        getHeaderEntries: function() { return []; }
+      };
+
+      // when
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+      // then
+      var description = queryPopup('.djs-popup-entry-description');
+
+      expect(description).to.exist;
+      expect(description.textContent).to.eql('This is a description');
+    }));
+
+
+    it('should add docRef if specified', inject(function(popupMenu) {
+
+      // given
+      var testMenuProvider = {
+        getEntries: function() {
+          return [
+            {
+              id: '1',
+              documentationRef: '#',
+              label: 'with documentation ref'
+            }
+          ];
+        }
+      };
+
+      // when
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+      // then
+      var link = queryPopup('.djs-popup-entry-docs a');
+
+      expect(link).to.exist;
+
+      // but when
+      link.click();
+
+      // then
+      // menu shall remain open
+      expect(popupMenu.isOpen()).to.be.true;
+    }));
+
+
+    describe('search rank', function() {
+
+      var testMenuProvider = {
+        getEntries: function() {
+          return [
+            {
+              id: 'A',
+              label: 'A'
+            },
+            {
+              id: 'B',
+              label: 'B'
+            },
+            {
+              id: 'C',
+              label: 'C'
+            },
+            {
+              id: 'D',
+              label: 'D',
+              rank: 1
+            },
+            {
+              id: 'E',
+              label: 'E',
+              rank: 0
+            },
+            {
+              id: 'F',
+              label: 'F (hide initially)',
+              rank: -1
+            }
+          ];
+        }
+      };
+
+
+      it('should hide rank < 0 items', inject(async function(popupMenu) {
+
+        // given
+        popupMenu.registerProvider('test-menu', testMenuProvider);
+
+        // when
+        popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
+
+        // then
+        var shownEntries = queryPopupAll('.entry');
+
+        expect(shownEntries).to.have.length(5);
+      }));
+
+
+      it('should show rank < 0 if filtered', inject(async function(popupMenu) {
+
+        // given
+        popupMenu.registerProvider('test-menu', testMenuProvider);
+        popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
+
+        // when
+        await triggerSearch('hide ini');
+
+        // then
+        var shownEntries = queryPopupAll('.entry');
+
+        expect(shownEntries).to.have.length(1);
+      }));
+
+    });
+
   });
 
 
@@ -875,15 +1326,17 @@ describe('features/popup', function() {
         var container = getPopupContainer(popupMenu);
 
         // then
-        expect(domQuery('.popup-menu1', document)).to.be.null;
-        expect(domQuery('.popup-menu2', document)).not.to.be.null;
+        expect(queryPopup('.popup-menu1')).to.be.null;
+        expect(queryPopup('.popup-menu2')).not.to.be.null;
 
-        expect(domClasses(container).has('popup-menu2')).to.be.true;
+        var popupBackdropEl = container.childNodes[0];
 
-        expect(container.style.left).to.eql('200px');
-        expect(container.style.top).to.eql('200px');
+        var popupEl = popupBackdropEl.childNodes[0];
+        expect(popupEl.style.left).to.eql('200px');
+        expect(popupEl.style.top).to.eql('200px');
+        expect(domClasses(popupEl).has('popup-menu2')).to.be.true;
 
-        var group = getGroup(popupMenu, 'default');
+        var group = getGroup('default');
 
         expect(group.childNodes[0].textContent).to.eql('Entry A');
         expect(group.childNodes[1].textContent).to.eql('Entry B');
@@ -908,12 +1361,12 @@ describe('features/popup', function() {
         // then
         expect(function() {
           popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
-        }).to.throw('every entry must have the id property set');
+        }).to.throw('entry ID is missing');
       }
     ));
 
 
-    it('should be attached to the top of the popup menu, if set' , inject(
+    it('should be attached to the top of the popup menu, if set', inject(
       function(popupMenu) {
 
         // when
@@ -921,30 +1374,32 @@ describe('features/popup', function() {
         popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
         // then
-        expect(queryPopup(popupMenu, '.djs-popup-header')).to.exist;
+        var popupHeader = queryPopup('.djs-popup .header');
+        expect(domQuery('.djs-popup-header .entry', popupHeader)).to.exist;
       }
     ));
 
 
-    it('should add a custom css class to the header section, if specified', inject(
-      function(popupMenu) {
+    it('should add custom class to header entry if specified', inject(function(popupMenu) {
 
-        var testMenuProvider = {
-          getHeaderEntries: function() {
-            return [ { id: '1', className: 'header-entry-1' } ];
-          },
-          getEntries: function() {
-            return [ { id: '2', label: 'foo' } ];
-          }
-        };
+      // given
+      var testMenuProvider = {
+        getHeaderEntries: function() {
+          return [ { id: '1', className: 'header-entry-1' } ];
+        },
+        getEntries: function() {
+          return [ { id: '2', label: 'foo' } ];
+        }
+      };
 
-        popupMenu.registerProvider('test-menu', testMenuProvider);
-        popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+      // when
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
-        // then
-        expect(queryPopup(popupMenu, '.header-entry-1')).to.exist;
-      }
-    ));
+      // then
+      var element = queryPopup('.header-entry-1');
+      expect(element.className).to.eql('entry header-entry-1');
+    }));
 
 
     it('should add an image to the header section, if specified', inject(function(popupMenu) {
@@ -963,11 +1418,12 @@ describe('features/popup', function() {
         getEntries: function() { return []; }
       };
 
+      // when
       popupMenu.registerProvider('test-menu', testMenuProvider);
       popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
       // then
-      var img = queryPopup(popupMenu, '.image-1 img');
+      var img = queryPopup('.image-1 img');
 
       expect(img).to.exist;
       expect(img.getAttribute('src')).to.eql(testImage);
@@ -989,12 +1445,12 @@ describe('features/popup', function() {
         getEntries: function() { return []; }
       };
 
+      // when
       popupMenu.registerProvider('test-menu', testMenuProvider);
       popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
       // then
-      var injected = queryPopup(popupMenu, 'marquee');
-
+      var injected = queryPopup('marquee');
       expect(injected).not.to.exist;
     }));
 
@@ -1002,6 +1458,7 @@ describe('features/popup', function() {
     it('should add a labeled element to the header section, if specified', inject(
       function(popupMenu) {
 
+        // given
         var testMenuProvider = {
           getHeaderEntries: function() {
             return [ { id: '1', label: 'foo', className: 'label-1' } ];
@@ -1009,13 +1466,13 @@ describe('features/popup', function() {
           getEntries: function() { return []; }
         };
 
+        // when
         popupMenu.registerProvider('test-menu', testMenuProvider);
         popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
         // then
-        var headerEntry = queryPopup(popupMenu, '.label-1');
-
-        expect(headerEntry.textContent).to.eql('foo');
+        var element = queryPopup('.label-1');
+        expect(element.textContent).to.eql('foo');
       }
     ));
 
@@ -1023,12 +1480,13 @@ describe('features/popup', function() {
     it('should throw an error if the position argument is missing', inject(
       function(popupMenu) {
 
+        // given
         popupMenu.registerProvider('menu', menuProvider);
 
         // then
         expect(function() {
           popupMenu.open({}, 'menu');
-        }).to.throw('the position argument is missing');
+        }).to.throw('position is missing');
       }
     ));
 
@@ -1045,8 +1503,8 @@ describe('features/popup', function() {
       popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
       // then
-      expect(queryPopup(popupMenu, '.djs-popup-header')).not.to.exist;
-      expect(queryPopup(popupMenu, '.djs-popup-body')).not.to.exist;
+      expect(queryPopup('.djs-popup-header')).not.to.exist;
+      expect(queryPopup('.djs-popup-body')).not.to.exist;
     }));
 
 
@@ -1066,13 +1524,14 @@ describe('features/popup', function() {
         getEntries: function() { return []; }
       };
 
+      // when
       popupMenu.registerProvider('test-menu', testProvider);
       popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
-      var entry = queryPopup(popupMenu, '.entry');
+      var entry = queryPopup('.djs-popup-header .entry');
 
       // when
-      popupMenu.trigger(globalEvent(entry, { x: 0, y: 0 }));
+      entry.click();
 
       // then
       expect(actionListener).to.have.been.called;
@@ -1103,7 +1562,7 @@ describe('features/popup', function() {
       popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
       // then
-      entry = queryEntry(popupMenu, 'foo');
+      entry = queryPopup('.djs-popup-header .entry[data-id="foo"]');
 
       expect(domClasses(entry).has('active')).to.be.true;
       expect(domClasses(entry).has('disabled')).to.be.true;
@@ -1143,19 +1602,19 @@ describe('features/popup', function() {
     }));
 
 
-    it('should open within bounds above', inject(function(popupMenu, canvas) {
+    it('should open within bounds above', inject(function(popupMenu) {
 
       // given
-      var clientRect = canvas._container.getBoundingClientRect();
+      var documentBounds = document.documentElement.getBoundingClientRect();
 
-      var y = clientRect.height - 40;
+      var y = documentBounds.height - 40;
 
-      var cursorPosition = { x: clientRect.left + 100, y: clientRect.top + y };
+      var cursorPosition = { x: documentBounds.left + 100, y: documentBounds.top + y };
 
       // when
-      popupMenu.open({}, 'custom-provider', { x: 100, y: y, cursor: cursorPosition });
+      popupMenu.open({}, 'custom-provider', cursorPosition);
 
-      var menu = popupMenu._current.container;
+      var menu = queryPopup('.djs-popup');
 
       var menuDimensions = {
         width: menu.scrollWidth,
@@ -1163,25 +1622,26 @@ describe('features/popup', function() {
       };
 
       // then
-      expect(menu.offsetTop).to.be.closeTo(y - menuDimensions.height, 1);
+      expect(menu.offsetTop).to.be.closeTo(y - menuDimensions.height, 3);
     }));
 
 
     it('should open within bounds above (limited client rect height)', inject(
-      function(popupMenu, canvas) {
+
+      function(popupMenu) {
 
         // given
         // limited client rect height
-        canvas._container.parentElement.style.height = '200px';
+        document.body.style.height = '200px';
 
-        var clientRect = canvas._container.getBoundingClientRect();
+        var documentBounds = document.documentElement.getBoundingClientRect();
 
-        var cursorPosition = { x: clientRect.left + 10, y: clientRect.top + 150 };
+        var cursorPosition = { x: documentBounds.left + 10, y: documentBounds.top + 150 };
 
         // when
         popupMenu.open({}, 'custom-provider', { x: 100, y: 150, cursor: cursorPosition });
 
-        var menu = popupMenu._current.container;
+        var menu = queryPopup('.djs-popup');
 
         // then
         expect(menu.offsetTop).to.equal(10);
@@ -1189,24 +1649,24 @@ describe('features/popup', function() {
     ));
 
 
-    it('should open within bounds to the left', inject(function(popupMenu, canvas) {
+    it('should open within bounds to the left', inject(function(popupMenu) {
 
       // given
-      var clientRect = canvas._container.getBoundingClientRect();
+      var documentBounds = document.documentElement.getBoundingClientRect();
 
-      var cursorPosition = { x: clientRect.left + 2000, y: clientRect.top + 100 };
+      var cursorPosition = { x: documentBounds.right, y: documentBounds.top + 100 };
 
       // when
-      popupMenu.open({}, 'custom-provider', { x: 2000, y: 100, cursor: cursorPosition });
+      popupMenu.open({}, 'custom-provider', cursorPosition);
 
-      var menu = popupMenu._current.container;
+      var menu = queryPopup('.djs-popup');
 
       var menuDimensions = {
         width: menu.scrollWidth,
         height: menu.scrollHeight
       };
 
-      expect(menu.offsetLeft).to.be.closeTo(2000 - menuDimensions.width, 2);
+      expect(menu.offsetLeft).to.be.closeTo(documentBounds.right - menuDimensions.width, 2);
     }));
 
   });
@@ -1252,7 +1712,7 @@ describe('features/popup', function() {
 
           popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
-          var menu = popupMenu._current.container;
+          var menu = queryPopup('.djs-popup');
 
           var actualScale = scaleVector(menu) || { x: 1, y: 1 };
 
@@ -1373,14 +1833,18 @@ describe('features/popup', function() {
   describe('legacy providers', function() {
 
     function LegacyProvider(entries, headerEntries) {
-      this.getEntries = isFunction(entries) ? entries : function() {
-        return entries || [];
-      };
+      this.getEntries = isFunction(entries)
+        ? entries
+        : function() {
+          return entries || [];
+        };
 
       if (headerEntries) {
-        this.getHeaderEntries = isFunction(headerEntries) ? headerEntries : function() {
-          return headerEntries;
-        };
+        this.getHeaderEntries = isFunction(headerEntries)
+          ? headerEntries
+          : function() {
+            return headerEntries;
+          };
       }
     }
 
@@ -1408,7 +1872,10 @@ describe('features/popup', function() {
     it('should return false for isEmpty if entries', inject(function(popupMenu) {
 
       // when
-      popupMenu.registerProvider('entry-menu', new LegacyProvider([ { id: 'singleEntry' } ]));
+      popupMenu.registerProvider(
+        'entry-menu',
+        new LegacyProvider([ { id: 'singleEntry' } ])
+      );
 
       // then
       expect(popupMenu.isEmpty({}, 'entry-menu')).to.be.false;
@@ -1419,12 +1886,11 @@ describe('features/popup', function() {
 
       // when
       popupMenu.registerProvider('menu', menuProvider);
-      popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
       // then
       expect(popupMenu.isOpen()).to.be.true;
-    }));
-    beforeEach(inject(function(popupMenu) {
+
     }));
 
 
@@ -1432,7 +1898,7 @@ describe('features/popup', function() {
 
       // given
       popupMenu.registerProvider('menu', new LegacyProvider());
-      popupMenu.open({}, 'menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
       var closeSpy = sinon.spy();
 
@@ -1466,9 +1932,9 @@ describe('features/popup', function() {
 
       popupMenu.registerProvider('test-menu', new LegacyProvider(entries));
 
-      popupMenu.open({}, 'test-menu' ,{ x: 100, y: 100 });
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
 
-      var entry = queryPopup(popupMenu, '.Entry_1');
+      var entry = queryPopup('[data-id="1"]');
 
       // when
       var trigger = popupMenu.trigger(globalEvent(entry, { x: 0, y: 0 }));
@@ -1482,12 +1948,15 @@ describe('features/popup', function() {
       function(popupMenu) {
 
         // when
-        popupMenu.registerProvider('test-menu', new LegacyProvider([ { label: 'foo' } ]));
+        popupMenu.registerProvider(
+          'test-menu',
+          new LegacyProvider([ { label: 'foo' } ])
+        );
 
         // then
         expect(function() {
           popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
-        }).to.throw('every entry must have the id property set');
+        }).to.throw('entry ID is missing');
       }
     ));
 
@@ -1496,12 +1965,15 @@ describe('features/popup', function() {
       function(popupMenu) {
 
         // when
-        popupMenu.registerProvider('test-menu', new LegacyProvider(null, [ { label: 'foo' } ]));
+        popupMenu.registerProvider(
+          'test-menu',
+          new LegacyProvider(null, [ { label: 'foo' } ])
+        );
 
         // then
         expect(function() {
           popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
-        }).to.throw('every entry must have the id property set');
+        }).to.throw('entry ID is missing');
       }
     ));
 
@@ -1510,32 +1982,189 @@ describe('features/popup', function() {
 });
 
 
+describe('features/popup-menu - integration', function() {
 
-// helper ////
-function Provider(entries, headerEntries) {
-  this.getPopupMenuEntries = isFunction(entries) ? entries : function() {
-    return entries || {};
+  const imageUrl = `data:image/svg+xml;utf8,${
+    encodeURIComponent(`
+      <svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+        <rect width="300" height="300" style="fill: green" />
+      </svg>
+    `)
+  }`;
+
+  const entrySet = (entries) => {
+
+    return entries.reduce((keyedEntries, entry) => {
+
+      expect(entry).to.have.property('id');
+      expect(keyedEntries).not.to.have.property(entry.id);
+
+      keyedEntries[entry.id] = entry;
+
+      return keyedEntries;
+    }, {});
+
   };
 
-  if (headerEntries) {
-    this.getPopupMenuHeaderEntries = isFunction(headerEntries) ? headerEntries : function() {
-      return headerEntries;
+  beforeEach(bootstrapDiagram({
+    modules: [
+      popupMenuModule
+    ]
+  }));
+
+
+  it('should render complex', inject(function(popupMenu) {
+
+    // given
+    const headerEntries = entrySet([
+      { id: '_1', label: '|A|' },
+      { id: '_1.1', label: '|A|', imageUrl },
+      { id: '_2', imageUrl, title: 'Toggle foo' },
+      { id: '_3', className: 'bpmn-icon-sun' }
+    ]);
+
+    const iconGroup = {
+      id: '_icons',
+      name: 'Icon Group'
     };
+
+    const entries = entrySet([
+      { id: '_4', label: 'Label (click)', action: {
+        click(...args) {
+          console.log('CLICK', ...args);
+        }
+      } },
+      { id: '_4.1', label: 'Label (drag)', action: {
+        dragstart(...args) {
+          console.log('DRAG START', ...args);
+        }
+      } },
+      { id: '_4.2', label: 'Label (click + drag)', action: {
+        dragstart(...args) {
+          console.log('DRAG START', ...args);
+        },
+        click(...args) {
+          console.log('CLICK', ...args);
+        }
+      } },
+      { id: '_5', imageUrl, title: 'Just image' },
+      { id: '_6', imageUrl, label: 'Image and label' },
+      { id: '_7', label: 'with description', description: 'I DESCRIBE IT' },
+      { id: '_7.1', label: 'with long title and description, you cannot believe what happened next', description: 'A very long description, you cannot believe what happened next' },
+      { id: '_7.2', label: 'with long title and description, you cannot believe what happened next', description: 'A very long description, you cannot believe what happened next', documentationRef: 'http://localhost' },
+      { id: '_8', imageUrl, label: 'with image + description', description: 'I DESCRIBE more stuff' },
+      { id: '_9', imageUrl, label: 'WITH DOC REF', documentationRef: 'http://localhost' },
+      { id: '_10', imageUrl, label: 'FOO', description: 'WITH DOC REF', documentationRef: 'http://localhost' },
+      { id: '_11', className: 'bpmn-icon-sun', label: 'FONT ICON + description', description: 'WITH DOC REF', group: iconGroup },
+      { id: '_11.1', className: 'bpmn-icon-sun', label: 'FONT ICON', group: iconGroup },
+      { id: '_11.2', className: 'bpmn-icon-sun', title: 'icon only', group: iconGroup },
+      { id: '_12', className: 'bpmn-icon-sun', title: 'icon only', group: {
+        id: '_super long',
+        name: 'Extremely super long group incredible!'
+      } },
+      { id: '_13', group: { id: '_other', name: 'Other' }, label: '13' },
+      { id: '_14', group: { id: '_other', name: 'Other' }, label: '14' },
+      { id: '_15', group: { id: '_other', name: 'Other' }, label: '15' },
+      { id: '_16', group: { id: '_other', name: 'Other' }, label: '16' },
+      { id: '_17', group: { id: '_other', name: 'Other' }, label: '17' },
+      { id: '_18', group: { id: '_other', name: 'Other' }, label: '18' },
+      { id: '_19', group: { id: '_other', name: 'Other' }, label: '19' }
+    ]);
+
+    const provider = new Provider(entries, headerEntries);
+
+    // when
+    popupMenu.registerProvider('complex', provider);
+
+    // then
+    popupMenu.open({}, 'complex', {
+      x: 100, y: 200
+    }, {
+      width: 250,
+      title: 'Popup menu with super long title'
+    });
+
+  }));
+
+});
+
+
+// helpers /////////////
+
+function Provider(entries, headerEntries) {
+  this.getPopupMenuEntries = isFunction(entries)
+    ? entries
+    : function() {
+      return entries || {};
+    };
+
+  if (headerEntries) {
+    this.getPopupMenuHeaderEntries = isFunction(headerEntries)
+      ? headerEntries
+      : function() {
+        return headerEntries;
+      };
   }
 }
 
-function queryEntry(popupMenu, id) {
-  return queryPopup(popupMenu, '[data-id="' + id + '"]');
+function queryEntry(id) {
+  return queryPopup('[data-id="' + id + '"]');
 }
 
-function queryPopup(popupMenu, selector) {
-  return domQuery(selector, getPopupContainer(popupMenu));
+function queryPopup(selector, q = domQuery) {
+  var container = getPopupContainer();
+
+  if (selector) {
+    expect(container).to.exist;
+
+    return q(selector, container);
+  }
+
+  return container;
 }
 
-function getPopupContainer(popupMenu) {
-  return popupMenu._current.container;
+function queryPopupAll(selector) {
+  return queryPopup(selector, domQueryAll);
 }
 
-function getGroup(popupMenu, groupName) {
-  return domQuery('[data-group="' + groupName + '"]', getPopupContainer(popupMenu));
+function getPopupContainer() {
+  return getDiagramJS().invoke(function(popupMenu) {
+    const current = popupMenu._current;
+
+    expect(current, 'expect popupMenu to be open').to.exist;
+
+    return current.container;
+  });
+}
+
+function getGroup(groupName) {
+  return domQuery('[data-group="' + groupName + '"]', getPopupContainer());
+}
+
+function whenStable() {
+  return new Promise(resolve => setTimeout(resolve, 300));
+}
+
+/**
+ * @param { string } key
+ *
+ * @return { KeyboardEvent }
+ */
+function keyUp(key) {
+  return new KeyboardEvent('keyup', { key, bubbles: true });
+}
+
+/**
+ * @param {string} value
+ */
+function triggerSearch(value) {
+
+  var searchInput = queryPopup('.djs-popup-search input');
+
+  expect(searchInput, 'search exists').to.exist;
+
+  searchInput.value = value;
+  searchInput.dispatchEvent(keyUp('ArrowRight'));
+
+  return whenStable();
 }

@@ -55,6 +55,16 @@ describe('Canvas', function() {
       expect(svg).not.to.be.null;
     }));
 
+
+    it('should create .djs-container element', inject(function() {
+
+      // then
+      var diagramContainer = container.querySelector('.djs-container');
+
+      expect(diagramContainer).not.to.be.null;
+      expect(diagramContainer.className).to.eql('djs-container djs-parent');
+    }));
+
   });
 
 
@@ -585,15 +595,6 @@ describe('Canvas', function() {
 
       // root element is returned from setter?
       expect(rootElement).to.equal(rootElement);
-    }));
-
-
-    it('should fail with override flag', inject(function(canvas) {
-
-      // then
-      expect(function() {
-        canvas.setRootElement({ id: 'newRoot' }, true);
-      }).to.throw(/override not supported/);
     }));
 
 
