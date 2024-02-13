@@ -6,6 +6,72 @@ All notable changes to [diagram-js](https://github.com/bpmn-io/diagram-js) are d
 
 _**Note:** Yet to be released changes appear here._
 
+## 13.4.0
+
+* `DEPS`: update to `object-refs@0.4.0`
+
+## 13.3.0
+
+* `DEPS`: update to `path-intersection@3`
+
+## 13.2.0
+
+* `FEAT`: add `module` export
+
+## 13.1.0
+
+* `FEAT`: allow non-searchable entries in popup menu ([#835](https://github.com/bpmn-io/diagram-js/pull/835))
+
+## 13.0.0
+
+* `DEPS`: update to `didi@10.0.1`
+
+## 12.8.1
+
+* `FIX`: reposition popup menu if it opens above the viewport ([#829](https://github.com/bpmn-io/diagram-js/pull/829))
+ 
+## 12.8.0
+
+* `FEAT`: remove selection outline from connections ([#826](https://github.com/bpmn-io/diagram-js/pull/826))
+* `FEAT`: position context pad according to last waypoint for connections ([#826](https://github.com/bpmn-io/diagram-js/pull/826))
+
+## 12.7.3
+
+* `FIX`: correct error when computing outline ([#822](https://github.com/bpmn-io/diagram-js/issues/822))
+
+## 12.7.2
+
+* `FIX`: revert `djs-dragging` CSS class changes ([#821](https://github.com/bpmn-io/diagram-js/pull/821))
+* `FIX`: clear context pad hover timeout on close ([#823](https://github.com/bpmn-io/diagram-js/pull/823))
+
+## 12.7.1
+
+* `FIX`: revert selection outline removal for connections ([#820](https://github.com/bpmn-io/diagram-js/pull/820))
+
+## 12.7.0
+
+* `FEAT`: support `imageHtml` option for popup menu header entries ([#819](https://github.com/bpmn-io/diagram-js/pull/819))
+
+## 12.6.0
+
+* `FEAT`: support custom outline providers ([#817](https://github.com/bpmn-io/diagram-js/pull/817))
+* `FEAT`: remove selection outline from connections ([#817](https://github.com/bpmn-io/diagram-js/pull/817))
+
+## 12.5.0
+
+* `FEAT`: make spacetool local per default ([#811](https://github.com/bpmn-io/diagram-js/pull/811))
+* `FEAT`: add complex preview feature ([#807](https://github.com/bpmn-io/diagram-js/pull/807))
+* `CHORE`: mark connection as dragging when moving bendpoint ([#807](https://github.com/bpmn-io/diagram-js/pull/807))
+
+## 12.4.0
+
+* `FEAT`: add zoom through `Cmd` + mousewheel on macOS ([#806](https://github.com/bpmn-io/diagram-js/pull/806))
+* `FEAT`: add/remove space locally through `Shift` + space tool ([#808](https://github.com/bpmn-io/diagram-js/pull/808))
+
+## 12.3.0
+
+* `FEAT`: don't hide overlays on canvas move by default. The config option `canvas.deferUpdate` now defaults to `false` ([#798](https://github.com/bpmn-io/diagram-js/issues/798))
+
 ## 12.2.0
 
 * `FEAT`: allow to provide html for popup menu entries icons ([#790](https://github.com/bpmn-io/diagram-js/pull/790))

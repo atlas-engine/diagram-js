@@ -1430,6 +1430,33 @@ describe('features/popup-menu', function() {
     }));
 
 
+    it('should add an image as html to the header section, if specified', inject(function(popupMenu) {
+
+      // given
+      var testMenuProvider = {
+        getHeaderEntries: function() {
+          return [
+            {
+              id: '1',
+              imageHtml: '<svg height="100" width="100"><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" /></svg>',
+              className: 'image-1'
+            }
+          ];
+        },
+        getEntries: function() { return []; }
+      };
+
+      // when
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+      // then
+      var svg = queryPopup('.image-1 svg');
+
+      expect(svg).to.exist;
+    }));
+
+
     it('should NOT allow XSS via imageUrl', inject(function(popupMenu) {
 
       // given
@@ -1623,6 +1650,29 @@ describe('features/popup-menu', function() {
 
       // then
       expect(menu.offsetTop).to.be.closeTo(y - menuDimensions.height, 3);
+    }));
+
+
+    it('should open within bounds bellow', inject(function(popupMenu) {
+
+      // given
+      var documentBounds = document.documentElement.getBoundingClientRect();
+
+      const y = - 5;
+      var cursorPosition = { x: documentBounds.left + 100, y: documentBounds.top + y };
+
+      // when
+      popupMenu.open({}, 'custom-provider', cursorPosition);
+
+      var menu = queryPopup('.djs-popup');
+
+      var menuDimensions = {
+        width: menu.scrollWidth,
+        height: menu.scrollHeight
+      };
+
+      // then
+      expect(menu.offsetTop).to.be.closeTo(y + menuDimensions.height, 3);
     }));
 
 

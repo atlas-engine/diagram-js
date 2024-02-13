@@ -121,8 +121,13 @@
   stroke: var(--element-selected-outline-stroke-color);
 }
 
+.djs-connection.selected .djs-outline {
+  display: none;
+}
+
 .djs-multi-select .djs-element.selected .djs-outline {
   stroke: var(--element-selected-outline-secondary-stroke-color);
+  display: block;
 }
 
 .djs-shape.connect-ok .djs-visual > :nth-child(1) {
@@ -280,18 +285,10 @@ marker.djs-dragger tspan {
   stroke: var(--element-dragger-color) !important;
 }
 
-.djs-dragging {
-  opacity: 0.3;
-}
-
 .djs-dragging,
 .djs-dragging > * {
+  opacity: 0.3 !important;
   pointer-events: none !important;
-}
-
-.djs-dragging .djs-context-pad,
-.djs-dragging .djs-outline {
-  display: none !important;
 }
 
 /**

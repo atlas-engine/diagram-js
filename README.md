@@ -20,40 +20,42 @@ Some libraries / applications built on top of diagram-js:
 * [archimate-js](https://github.com/archimodel/archimate-js) - An ArchiMate diagram viewer and editor ([Demo](https://archimodel.net))
 * [chor-js](https://github.com/bptlab/chor-js) - A BPMN 2.0 Choreography diagram viewer and editor ([Demo](https://bpt-lab.org/chor-js-demo/))
 * [Node Sequencer](https://github.com/philippfromme/node-sequencer) - A Node-Based Sequencer for the Web ([Demo](https://philippfromme.github.io/node-sequencer-demo/))
-* [Object Diagram Modeler](https://github.com/timKraeuter/object-diagram-modeler) - An object diagram viewer and editor ([Demo](https://timkraeuter.com/object-diagram-modeler/))
+* [object-diagram-js](https://github.com/timKraeuter/object-diagram-js) - An object diagram viewer and editor ([Demo](https://timkraeuter.com/object-diagram-js/))
 * [postit-js](https://github.com/pinussilvestrus/postit-js) - Create Post-it boards on a canvas editor ([Demo](https://postit-js-demo.netlify.app/))
 
 ## Resources
 
 * [Issues](https://github.com/bpmn-io/diagram-js/issues)
 * [Changelog](./CHANGELOG.md)
-* [Contributing Guide](https://github.com/bpmn-io/diagram-js/blob/master/.github/CONTRIBUTING.md)
+* [Contributing Guide](.github/CONTRIBUTING.md)
 * [Examples](https://github.com/bpmn-io/diagram-js-examples)
 
 
-## Hacking the Project
+## Development
 
-To get the development setup make sure to have [NodeJS](https://nodejs.org/en/download/) installed.
-As soon as you are set up, clone the project and execute
+Prepare the project by installing all dependencies:
 
-```
+```sh
 npm install
 ```
 
+Then, depending on your use-case you may run any of the following commands:
 
-### Testing
+```sh
+# build the library and run all tests
+npm run all
 
-Execute `npm run dev` to run the test suite in watch mode.
+# run the development setup
+npm run dev
 
-Expose an environment variable `TEST_BROWSERS=(Chrome|Firefox|IE)` to execute the tests in a non-headless browser.
+# run tests (single run)
+npm test
+```
 
+Expose an environment variable `TEST_BROWSERS=(Chrome|Firefox)` to execute the tests in a non-headless browser.
 
-### Package
-
-Execute `npm run all` to lint and test the project.
-
-__Note:__ We do not generate any build artifacts. Required parts of the library should be bundled by modelers / viewers as needed instead.
-
+> [!NOTE]
+> We do not generate any build artifacts. Required parts of the library should be bundled by consuming libraries as needed instead.
 
 
 ## License

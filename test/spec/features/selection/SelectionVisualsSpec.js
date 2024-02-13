@@ -69,10 +69,10 @@ describe('features/selection/SelectionVisuals', function() {
       it('should show box on select', inject(function(selection, canvas) {
 
         // when
-        selection.select(connection);
+        selection.select(shape);
 
         // then
-        var gfx = canvas.getGraphics(connection),
+        var gfx = canvas.getGraphics(shape),
             outline = domQuery('.djs-outline', gfx);
 
         expect(outline).to.exist;
@@ -86,6 +86,21 @@ describe('features/selection/SelectionVisuals', function() {
 
         // then
         expect(domClasses(element).has('djs-multi-select'));
+      }));
+
+
+      it('should not show box for connection', inject(function(selection, canvas) {
+
+        // when
+        // debugger;
+        selection.select(connection);
+
+        // then
+        var gfx = canvas.getGraphics(connection),
+            outline = domQuery('.djs-outline', gfx);
+
+        expect(outline).to.exist;
+        expect(getComputedStyle(outline).display).to.equal('none');
       }));
 
     });
@@ -190,6 +205,15 @@ describe('features/selection/SelectionVisuals', function() {
           expectShapeToBeWithinLimits(shape, newBounds);
         });
 
+      }));
+
+
+      it('should show box for connection', inject(function(canvas) {
+        var gfx = canvas.getGraphics(connection),
+            outlineShape = domQuery('.djs-outline', gfx);
+
+        expect(outlineShape).to.exist;
+        expect(getComputedStyle(outlineShape).display).to.not.equal('none');
       }));
 
     });
