@@ -250,7 +250,6 @@ describe('features/popup-menu', function() {
       eventBus.on('popupMenu.open', openSpy);
       eventBus.on('popupMenu.opened', openedSpy);
 
-
       // when
       popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
@@ -558,6 +557,85 @@ describe('features/popup-menu', function() {
   });
 
 
+  describe('#refresh', function() {
+
+    it('should refresh', inject(function(eventBus, popupMenu) {
+
+      // given
+      var refreshSpy = sinon.spy();
+
+      eventBus.on('popupMenu.refresh', refreshSpy);
+
+      var dynamicMenuProvider = {
+        getPopupMenuEntries: function() {
+          return {
+            foo: { label: 'Foo' },
+            bar: { label: 'Bar' }
+          };
+        },
+        getHeaderEntries: function() {
+          return {
+            foo: { id: 'foo', label: 'Foo' },
+            bar: { id: 'bar', label: 'Bar' }
+          };
+        }
+      };
+
+      popupMenu.registerProvider('menu', dynamicMenuProvider);
+
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
+
+      expect(popupMenu._current).to.exist;
+      expect(popupMenu._current.entries).to.have.keys('foo', 'bar');
+      expect(popupMenu._current.entries).not.to.have.keys('baz');
+      expect(popupMenu._current.headerEntries).to.have.keys('foo', 'bar');
+      expect(popupMenu._current.headerEntries).not.to.have.keys('baz');
+
+      // when
+      dynamicMenuProvider.getPopupMenuEntries = function() {
+        return {
+          foo: { label: 'Foo' },
+          bar: { label: 'Bar' },
+          baz: { label: 'Baz' }
+        };
+      };
+
+      dynamicMenuProvider.getHeaderEntries = function() {
+        return {
+          foo: { id: 'foo', label: 'Foo' },
+          bar: { id: 'bar', label: 'Bar' },
+          baz: { id: 'baz', label: 'Baz' }
+        };
+      };
+
+      popupMenu.refresh();
+
+      // then
+      expect(refreshSpy).to.have.been.calledOnce;
+
+      expect(popupMenu._current).to.exist;
+      expect(popupMenu._current.entries).to.have.keys('foo', 'bar', 'baz');
+      expect(popupMenu._current.headerEntries).to.have.keys('foo', 'bar', 'baz');
+    }));
+
+
+    it('should not refresh', inject(function(eventBus, popupMenu) {
+
+      // given
+      var refreshSpy = sinon.spy();
+
+      eventBus.on('popupMenu.refresh', refreshSpy);
+
+      // when
+      popupMenu.refresh();
+
+      // then
+      expect(refreshSpy).not.to.have.been.called;
+    }));
+
+  });
+
+
   describe('#close', function() {
 
     beforeEach(inject(async function(eventBus, popupMenu) {
@@ -842,7 +920,6 @@ describe('features/popup-menu', function() {
       });
     }));
 
-
   });
 
 
@@ -948,7 +1025,51 @@ describe('features/popup-menu', function() {
       afterEach(sinon.restore);
 
 
-      it('should close menu (contextPad.close)', inject(function(popupMenu, eventBus) {
+      it('should refresh (element.changed)',inject(function(eventBus, popupMenu) {
+
+        // given
+        popupMenu.registerProvider('menu', menuProvider);
+
+        const element = { id: 'foo' };
+
+        popupMenu.open(element, 'menu', { x: 100, y: 100 });
+
+        const refreshSpy = sinon.spy();
+
+        eventBus.on('popupMenu.refresh', refreshSpy);
+
+        // when
+        eventBus.fire('element.changed', {
+          element
+        });
+
+        // then
+        expect(refreshSpy).to.have.been.calledOnce;
+      }));
+
+
+      it('should not refresh (element.changed)',inject(function(eventBus, popupMenu) {
+
+        // given
+        popupMenu.registerProvider('menu', menuProvider);
+
+        popupMenu.open({ id: 'foo' }, 'menu', { x: 100, y: 100 });
+
+        const refreshSpy = sinon.spy();
+
+        eventBus.on('popupMenu.refresh', refreshSpy);
+
+        // when
+        eventBus.fire('element.changed', {
+          element: { id: 'bar' }
+        });
+
+        // then
+        expect(refreshSpy).not.to.have.been.called;
+      }));
+
+
+      it('should close (contextPad.close)', inject(function(popupMenu, eventBus) {
 
         // given
         popupMenu.registerProvider('menu', menuProvider);
@@ -965,7 +1086,7 @@ describe('features/popup-menu', function() {
       }));
 
 
-      it('should close menu (canvas.viewbox.changing)', inject(function(popupMenu, eventBus) {
+      it('should close (canvas.viewbox.changing)', inject(function(popupMenu, eventBus) {
 
         // given
         popupMenu.registerProvider('menu', menuProvider);
