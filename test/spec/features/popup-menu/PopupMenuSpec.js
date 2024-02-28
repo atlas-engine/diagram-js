@@ -1,3 +1,5 @@
+import { waitFor as originalWaitFor } from '@testing-library/preact';
+
 import {
   bootstrapDiagram,
   getDiagramJS,
@@ -22,8 +24,14 @@ import { createEvent as globalEvent } from '../../../util/MockEvents';
 import popupMenuModule from 'lib/features/popup-menu';
 import modelingModule from 'lib/features/modeling';
 
+import { html } from 'lib/ui';
+
+const waitFor = (callback) => originalWaitFor(callback, { timeout: 10000 });
+
 
 describe('features/popup-menu', function() {
+
+  this.timeout(10000);
 
   beforeEach(bootstrapDiagram({
     modules: [
@@ -242,7 +250,6 @@ describe('features/popup-menu', function() {
       eventBus.on('popupMenu.open', openSpy);
       eventBus.on('popupMenu.opened', openedSpy);
 
-
       // when
       popupMenu.open({}, 'menu', { x: 100, y: 100 });
 
@@ -250,7 +257,8 @@ describe('features/popup-menu', function() {
       expect(popupMenu._current).to.exist;
       expect(openSpy).to.have.been.calledOnce;
 
-      await whenStable();
+      await waitFor(() => expect(openedSpy).to.have.been.calledOnce);
+
       expect(openedSpy).to.have.been.calledOnce;
     }));
 
@@ -549,11 +557,97 @@ describe('features/popup-menu', function() {
   });
 
 
+  describe('#refresh', function() {
+
+    it('should refresh', inject(function(eventBus, popupMenu) {
+
+      // given
+      var refreshSpy = sinon.spy();
+
+      eventBus.on('popupMenu.refresh', refreshSpy);
+
+      var dynamicMenuProvider = {
+        getPopupMenuEntries: function() {
+          return {
+            foo: { label: 'Foo' },
+            bar: { label: 'Bar' }
+          };
+        },
+        getHeaderEntries: function() {
+          return {
+            foo: { id: 'foo', label: 'Foo' },
+            bar: { id: 'bar', label: 'Bar' }
+          };
+        }
+      };
+
+      popupMenu.registerProvider('menu', dynamicMenuProvider);
+
+      popupMenu.open({}, 'menu', { x: 100, y: 100 });
+
+      expect(popupMenu._current).to.exist;
+      expect(popupMenu._current.entries).to.have.keys('foo', 'bar');
+      expect(popupMenu._current.entries).not.to.have.keys('baz');
+      expect(popupMenu._current.headerEntries).to.have.keys('foo', 'bar');
+      expect(popupMenu._current.headerEntries).not.to.have.keys('baz');
+
+      // when
+      dynamicMenuProvider.getPopupMenuEntries = function() {
+        return {
+          foo: { label: 'Foo' },
+          bar: { label: 'Bar' },
+          baz: { label: 'Baz' }
+        };
+      };
+
+      dynamicMenuProvider.getHeaderEntries = function() {
+        return {
+          foo: { id: 'foo', label: 'Foo' },
+          bar: { id: 'bar', label: 'Bar' },
+          baz: { id: 'baz', label: 'Baz' }
+        };
+      };
+
+      popupMenu.refresh();
+
+      // then
+      expect(refreshSpy).to.have.been.calledOnce;
+
+      expect(popupMenu._current).to.exist;
+      expect(popupMenu._current.entries).to.have.keys('foo', 'bar', 'baz');
+      expect(popupMenu._current.headerEntries).to.have.keys('foo', 'bar', 'baz');
+    }));
+
+
+    it('should not refresh', inject(function(eventBus, popupMenu) {
+
+      // given
+      var refreshSpy = sinon.spy();
+
+      eventBus.on('popupMenu.refresh', refreshSpy);
+
+      // when
+      popupMenu.refresh();
+
+      // then
+      expect(refreshSpy).not.to.have.been.called;
+    }));
+
+  });
+
+
   describe('#close', function() {
 
-    beforeEach(inject(function(popupMenu) {
+    beforeEach(inject(async function(eventBus, popupMenu) {
+      var openedSpy = sinon.spy();
+
+      eventBus.on('popupMenu.opened', openedSpy);
+
       popupMenu.registerProvider('menu', menuProvider);
+
       popupMenu.open({}, 'menu', { x: 100, y: 100 });
+
+      await waitFor(() => expect(openedSpy).to.have.been.calledOnce);
     }));
 
 
@@ -567,8 +661,9 @@ describe('features/popup-menu', function() {
       eventBus.on('popupMenu.closed', closedSpy);
 
       // when
-      await whenStable();
       popupMenu.close();
+
+      await waitFor(() => expect(closedSpy).to.have.been.calledOnce);
 
       // then
       var open = popupMenu.isOpen();
@@ -825,7 +920,6 @@ describe('features/popup-menu', function() {
       });
     }));
 
-
   });
 
 
@@ -931,7 +1025,51 @@ describe('features/popup-menu', function() {
       afterEach(sinon.restore);
 
 
-      it('should close menu (contextPad.close)', inject(function(popupMenu, eventBus) {
+      it('should refresh (element.changed)',inject(function(eventBus, popupMenu) {
+
+        // given
+        popupMenu.registerProvider('menu', menuProvider);
+
+        const element = { id: 'foo' };
+
+        popupMenu.open(element, 'menu', { x: 100, y: 100 });
+
+        const refreshSpy = sinon.spy();
+
+        eventBus.on('popupMenu.refresh', refreshSpy);
+
+        // when
+        eventBus.fire('element.changed', {
+          element
+        });
+
+        // then
+        expect(refreshSpy).to.have.been.calledOnce;
+      }));
+
+
+      it('should not refresh (element.changed)',inject(function(eventBus, popupMenu) {
+
+        // given
+        popupMenu.registerProvider('menu', menuProvider);
+
+        popupMenu.open({ id: 'foo' }, 'menu', { x: 100, y: 100 });
+
+        const refreshSpy = sinon.spy();
+
+        eventBus.on('popupMenu.refresh', refreshSpy);
+
+        // when
+        eventBus.fire('element.changed', {
+          element: { id: 'bar' }
+        });
+
+        // then
+        expect(refreshSpy).not.to.have.been.called;
+      }));
+
+
+      it('should close (contextPad.close)', inject(function(popupMenu, eventBus) {
 
         // given
         popupMenu.registerProvider('menu', menuProvider);
@@ -948,7 +1086,7 @@ describe('features/popup-menu', function() {
       }));
 
 
-      it('should close menu (canvas.viewbox.changing)', inject(function(popupMenu, eventBus) {
+      it('should close (canvas.viewbox.changing)', inject(function(popupMenu, eventBus) {
 
         // given
         popupMenu.registerProvider('menu', menuProvider);
@@ -1218,43 +1356,169 @@ describe('features/popup-menu', function() {
       expect(popupMenu.isOpen()).to.be.true;
     }));
 
+  });
 
-    describe('search rank', function() {
 
-      var testMenuProvider = {
+  describe('search', function() {
+
+    var testMenuProvider = {
+      getEntries: function() {
+        return [
+          {
+            id: 'a',
+            label: 'Alpha'
+          },
+          {
+            id: 'b',
+            label: 'Bravo'
+          },
+          {
+            id: 'c',
+            label: 'Charlie'
+          },
+          {
+            id: 'search',
+            label: 'Delta',
+            search: 'search'
+          },
+          {
+            id: 'description',
+            label: 'Echo',
+            description: 'description'
+          },
+          {
+            id: 'hidden',
+            label: 'Foxtrot',
+            rank: -1
+          }
+        ];
+      }
+    };
+
+
+    it('should not be searchable (<= 5 entries)', inject(async function(popupMenu) {
+
+      // given
+      popupMenu.registerProvider('test-menu', {
         getEntries: function() {
           return [
             {
-              id: 'A',
-              label: 'A'
+              id: 'foo',
+              label: 'Foo'
             },
             {
-              id: 'B',
-              label: 'B'
+              id: 'bar',
+              label: 'Bar'
             },
             {
-              id: 'C',
-              label: 'C'
-            },
-            {
-              id: 'D',
-              label: 'D',
-              rank: 1
-            },
-            {
-              id: 'E',
-              label: 'E',
-              rank: 0
-            },
-            {
-              id: 'F',
-              label: 'F (hide initially)',
-              rank: -1
+              id: 'baz',
+              label: 'Baz',
+              search: 'Bar'
             }
           ];
         }
-      };
+      });
 
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
+
+      // when
+      const search = queryPopup('.djs-popup-search');
+
+      // then
+      expect(search).not.to.exist;
+    }));
+
+
+    it('should show search results (matching label)', inject(async function(popupMenu) {
+
+      // given
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
+
+      // when
+      await triggerSearch('alpha');
+
+      // then
+      var shownEntries;
+
+      await waitFor(() => {
+        shownEntries = queryPopupAll('.entry');
+
+        expect(shownEntries).to.have.length(1);
+      });
+
+      expect(shownEntries[0].querySelector('.djs-popup-label').textContent).to.eql('Alpha');
+    }));
+
+
+    it('should show search results (matching search)', inject(async function(popupMenu) {
+
+      // given
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
+
+      // when
+      await triggerSearch('search');
+
+      // then
+      var shownEntries;
+
+      await waitFor(() => {
+        shownEntries = queryPopupAll('.entry');
+
+        expect(shownEntries).to.have.length(1);
+      });
+
+      expect(shownEntries[0].querySelector('.djs-popup-label').textContent).to.eql('Delta');
+    }));
+
+
+    it('should show search results (matching description)', inject(async function(popupMenu) {
+
+      // given
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
+
+      // when
+      await triggerSearch('description');
+
+      // then
+      var shownEntries;
+
+      await waitFor(() => {
+        shownEntries = queryPopupAll('.entry');
+
+        expect(shownEntries).to.have.length(1);
+      });
+
+      expect(shownEntries[0].querySelector('.djs-popup-label').textContent).to.eql('Echo');
+      expect(shownEntries[0].querySelector('.djs-popup-entry-description').textContent).to.eql('description');
+    }));
+
+
+    it('should show search results (matching label & search)', inject(async function(popupMenu) {
+
+      // given
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
+
+      // when
+      await triggerSearch('delta search');
+
+      // then
+      var shownEntries;
+
+      await waitFor(() => {
+        shownEntries = queryPopupAll('.entry');
+
+        expect(shownEntries).to.have.length(1);
+      });
+
+      expect(shownEntries[0].querySelector('.djs-popup-label').textContent).to.eql('Delta');
+    }));
+
+
+    describe('ranking', function() {
 
       it('should hide rank < 0 items', inject(async function(popupMenu) {
 
@@ -1265,9 +1529,17 @@ describe('features/popup-menu', function() {
         popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
 
         // then
-        var shownEntries = queryPopupAll('.entry');
+        var shownEntries;
 
-        expect(shownEntries).to.have.length(5);
+        await waitFor(() => {
+          shownEntries = queryPopupAll('.entry');
+
+          expect(shownEntries).to.have.length(5);
+        });
+
+        expect(Array.from(shownEntries).find(entry => {
+          entry.querySelector('.djs-popup-label').textContent === 'Foxtrot';
+        })).not.to.exist;
       }));
 
 
@@ -1278,15 +1550,84 @@ describe('features/popup-menu', function() {
         popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
 
         // when
-        await triggerSearch('hide ini');
+        await triggerSearch('foxtrot');
 
         // then
-        var shownEntries = queryPopupAll('.entry');
+        var shownEntries;
 
-        expect(shownEntries).to.have.length(1);
+        await waitFor(() => {
+          shownEntries = queryPopupAll('.entry');
+
+          expect(shownEntries).to.have.length(1);
+        });
+
+        expect(shownEntries[0].querySelector('.djs-popup-label').textContent).to.eql('Foxtrot');
       }));
 
     });
+
+
+    it('should render entry if no search results', inject(async function(popupMenu) {
+
+      // given
+      const menuProvider = {
+        ...testMenuProvider,
+        getEmptyPlaceholder: () => 'No matching entries found.'
+      };
+
+      popupMenu.registerProvider('test-menu', menuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
+
+      // when
+      await triggerSearch('foobar');
+
+      // then
+      await waitFor(() => {
+        var shownEntries = queryPopupAll('.entry');
+
+        expect(shownEntries).to.have.length(0);
+      });
+
+      var noSearchResultsNode = queryPopup('.djs-popup-no-results');
+
+      expect(noSearchResultsNode).to.exist;
+      expect(noSearchResultsNode.textContent).to.eql('No matching entries found.');
+    }));
+
+
+    it('should render custom entry if no search results', inject(async function(popupMenu) {
+
+      // given
+      const menuProvider = {
+        ...testMenuProvider,
+        getEmptyPlaceholder: () => {
+          return search => html`<h1 class="custom-empty-placeholder">${ search }</h1>`;
+        }
+      };
+
+      popupMenu.registerProvider('test-menu', menuProvider);
+
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 }, { search: true });
+
+      // when
+      await triggerSearch('foobar');
+
+      // then
+      await waitFor(() => {
+        var shownEntries = queryPopupAll('.entry');
+
+        expect(shownEntries).to.have.length(0);
+      });
+
+      var noSearchResultsNode = queryPopup('.djs-popup-no-results');
+
+      expect(noSearchResultsNode).to.exist;
+
+      var customNode = domQuery('.custom-empty-placeholder', noSearchResultsNode);
+
+      expect(customNode).to.exist;
+      expect(customNode.textContent).to.eql('foobar');
+    }));
 
   });
 
@@ -1427,6 +1768,33 @@ describe('features/popup-menu', function() {
 
       expect(img).to.exist;
       expect(img.getAttribute('src')).to.eql(testImage);
+    }));
+
+
+    it('should add an image as html to the header section, if specified', inject(function(popupMenu) {
+
+      // given
+      var testMenuProvider = {
+        getHeaderEntries: function() {
+          return [
+            {
+              id: '1',
+              imageHtml: '<svg height="100" width="100"><circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" /></svg>',
+              className: 'image-1'
+            }
+          ];
+        },
+        getEntries: function() { return []; }
+      };
+
+      // when
+      popupMenu.registerProvider('test-menu', testMenuProvider);
+      popupMenu.open({}, 'test-menu', { x: 100, y: 100 });
+
+      // then
+      var svg = queryPopup('.image-1 svg');
+
+      expect(svg).to.exist;
     }));
 
 
@@ -1623,6 +1991,29 @@ describe('features/popup-menu', function() {
 
       // then
       expect(menu.offsetTop).to.be.closeTo(y - menuDimensions.height, 3);
+    }));
+
+
+    it('should open within bounds bellow', inject(function(popupMenu) {
+
+      // given
+      var documentBounds = document.documentElement.getBoundingClientRect();
+
+      const y = - 5;
+      var cursorPosition = { x: documentBounds.left + 100, y: documentBounds.top + y };
+
+      // when
+      popupMenu.open({}, 'custom-provider', cursorPosition);
+
+      var menu = queryPopup('.djs-popup');
+
+      var menuDimensions = {
+        width: menu.scrollWidth,
+        height: menu.scrollHeight
+      };
+
+      // then
+      expect(menu.offsetTop).to.be.closeTo(y + menuDimensions.height, 3);
     }));
 
 
@@ -2141,14 +2532,10 @@ function getGroup(groupName) {
   return domQuery('[data-group="' + groupName + '"]', getPopupContainer());
 }
 
-function whenStable() {
-  return new Promise(resolve => setTimeout(resolve, 300));
-}
-
 /**
- * @param { string } key
+ * @param {string} key
  *
- * @return { KeyboardEvent }
+ * @return {KeyboardEvent}
  */
 function keyUp(key) {
   return new KeyboardEvent('keyup', { key, bubbles: true });
@@ -2165,6 +2552,4 @@ function triggerSearch(value) {
 
   searchInput.value = value;
   searchInput.dispatchEvent(keyUp('ArrowRight'));
-
-  return whenStable();
 }

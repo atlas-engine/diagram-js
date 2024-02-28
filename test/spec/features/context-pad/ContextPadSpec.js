@@ -16,6 +16,8 @@ import {
   classes as domClasses
 } from 'min-dom';
 
+import { getBBox } from 'lib/util/Elements';
+
 import contextPadModule from 'lib/features/context-pad';
 import selectionModule from 'lib/features/selection';
 
@@ -776,6 +778,16 @@ describe('features/context-pad', function() {
 
     beforeEach(bootstrapDiagram({ modules: [ contextPadModule, providerModule ] }));
 
+    var clock;
+
+    beforeEach(function() {
+      clock = sinon.useFakeTimers();
+    });
+
+    afterEach(function() {
+      clock.restore();
+    });
+
 
     it('should handle click event', inject(function(canvas, contextPad) {
 
@@ -795,6 +807,77 @@ describe('features/context-pad', function() {
 
       // then
       expect(event.__handled).to.be.true;
+    }));
+
+
+    it('should handle hover event', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({
+        id: 's1',
+        width: 100, height: 100,
+        x: 10, y: 10,
+        type: 'hover'
+      });
+
+      contextPad.open(shape);
+
+      var pad = contextPad.getPad(shape),
+          html = pad.html,
+          target = domQuery('[data-action="action.hover"]', html);
+
+      var event = globalEvent(target, { x: 0, y: 0 });
+
+      // when
+      contextPad.trigger('mouseover', event);
+
+      expect(event.__handled).not.to.exist;
+
+      clock.tick(500);
+
+      // then
+      expect(event.__handled).to.be.true;
+    }));
+
+
+    it('should not handle hover event', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({
+        id: 's1',
+        width: 100, height: 100,
+        x: 10, y: 10,
+        type: 'hover'
+      });
+
+      canvas.addShape({
+        id: 's2',
+        width: 100, height: 100,
+        x: 10, y: 10,
+        type: 'hover'
+      });
+
+      contextPad.open(shape);
+
+      var pad = contextPad.getPad(shape),
+          html = pad.html,
+          target = domQuery('[data-action="action.hover"]', html);
+
+      var event = globalEvent(target, { x: 0, y: 0 });
+
+      // when
+      contextPad.trigger('mouseover', event);
+
+      expect(event.__handled).not.to.exist;
+
+      clock.tick(250);
+
+      contextPad.trigger('click', globalEvent(target, { x: 0, y: 0 }));
+
+      clock.tick(500);
+
+      // then
+      expect(event.__handled).not.to.exist;
     }));
 
 
@@ -1274,4 +1357,79 @@ describe('features/context-pad', function() {
       expect(injected).not.to.exist;
     }));
   });
+
+
+  describe('position', function() {
+
+    beforeEach(bootstrapDiagram({
+      modules: [
+        contextPadModule
+      ]
+    }));
+
+
+    describe('single element', function() {
+
+      it('shape', inject(function(canvas, contextPad) {
+
+        // given
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        // when
+        const pad = contextPad.getPad(shape);
+
+        // then
+        var bBox = getBBox(shape);
+        expect(pad.position).to.eql({
+          left: bBox.x + bBox.width + 12,
+          top: bBox.y - 12 / 2
+        });
+      }));
+
+
+      it('connection', inject(function(canvas, contextPad) {
+
+        // given
+        var connection = { id: 'c1', waypoints: [ { x: 0, y: 0 }, { x: 100, y: 100 } ] };
+
+        canvas.addConnection(connection);
+
+        // when
+        const pad = contextPad.getPad(connection);
+
+        // then
+        var bBox = getBBox(connection.waypoints[connection.waypoints.length - 1]);
+        expect(pad.position).to.eql({
+          left: bBox.x + bBox.width + 12,
+          top: bBox.y - 12 / 2
+        });
+      }));
+
+    });
+
+
+    it('multi element', inject(function(canvas, contextPad) {
+
+      // given
+      var shape1 = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+      var shape2 = { id: 's2', width: 100, height: 100, x: 210, y: 10 };
+
+      canvas.addShape(shape1);
+      canvas.addShape(shape2);
+
+      // when
+      const pad = contextPad.getPad([ shape1, shape2 ]);
+
+      // then
+      var bBox = getBBox([ shape1, shape2 ]);
+      expect(pad.position).to.eql({
+        left: bBox.x + bBox.width + 12,
+        top: bBox.y - 12 / 2
+      });
+    }));
+
+  });
+
 });

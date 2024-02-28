@@ -1,3 +1,5 @@
+import { VNode } from '@bpmn-io/diagram-js-ui';
+
 import { PopupMenuTarget } from './PopupMenu';
 
 export type PopupMenuEntryAction = (event: Event, entry: PopupMenuEntry, action?: string) => any;
@@ -5,12 +7,14 @@ export type PopupMenuEntryAction = (event: Event, entry: PopupMenuEntry, action?
 export type PopupMenuEntry = {
   action: PopupMenuEntryAction;
   className: string;
+  imageUrl?: string;
+  imageHtml?: string;
   label: string;
 };
 
 export type PopupMenuEntries = Record<string, PopupMenuEntry>;
 
-export type PopupMenuEntriesCallback = (entries: PopupMenuEntries) => PopupMenuEntries;
+export type PopupMenuEntriesProvider = (entries: PopupMenuEntries) => PopupMenuEntries;
 
 export type PopupMenuHeaderEntryAction = (event: Event, entry: PopupMenuHeaderEntry, action?: string) => any;
 
@@ -19,12 +23,19 @@ export type PopupMenuHeaderEntry = {
   active?: boolean;
   className: string;
   id: string;
+  imageUrl?: string;
+  imageHtml?: string;
+  label?: string;
   title: string;
 };
 
 export type PopupMenuHeaderEntries = PopupMenuHeaderEntry[];
 
-export type PopupMenuProviderHeaderEntriesCallback = (entries: PopupMenuHeaderEntries) => PopupMenuHeaderEntries;
+export type PopupMenuProviderHeaderEntriesProvider = (entries: PopupMenuHeaderEntries) => PopupMenuHeaderEntries;
+
+export type PopupMenuEmptyPlaceholder = VNode;
+
+export type PopupMenuEmptyPlaceholderProvider = (search: string) => PopupMenuEmptyPlaceholder;
 
 /**
  * An interface to be implemented by a popup menu provider.
@@ -59,7 +70,7 @@ export default interface PopupMenuProvider {
    *
    * @param target
    */
-  getPopupMenuEntries(target: PopupMenuTarget): PopupMenuEntriesCallback | PopupMenuEntries;
+  getPopupMenuEntries(target: PopupMenuTarget): PopupMenuEntriesProvider | PopupMenuEntries;
 
   /**
    * Returns a list of header entries or a function that receives, modifies and
@@ -91,5 +102,21 @@ export default interface PopupMenuProvider {
    *
    * @param target
    */
-  getHeaderEntries?(target: PopupMenuTarget): PopupMenuProviderHeaderEntriesCallback | PopupMenuHeaderEntries;
+  getHeaderEntries?(target: PopupMenuTarget): PopupMenuProviderHeaderEntriesProvider | PopupMenuHeaderEntries;
+
+  /**
+   * Returns a component to be displayed when no popup menu entries
+   * match a given search query.
+   *
+   * @example
+   *
+   * ```javascript
+   * getEmptyPlaceholder() {
+   *   return (search) => <>
+   *     No results for <strong>{ search }</strong>
+   *   <>;
+   * }
+   * ```
+   */
+  getEmptyPlaceholder?(): PopupMenuEmptyPlaceholderProvider | PopupMenuEmptyPlaceholder;
 }
