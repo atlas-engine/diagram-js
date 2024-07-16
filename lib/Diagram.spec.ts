@@ -34,3 +34,22 @@ const foo = diagram.invoke((modeling: Modeling, eventBus: EventBus) => {
 });
 
 foo.bar = false;
+
+type NoneEvent = {};
+
+type EventMap = {
+  'diagram.init': NoneEvent
+};
+
+type ServiceMap = {
+  'eventBus': EventBus<EventMap>
+};
+
+const typedDiagram = new Diagram<ServiceMap>();
+
+const eventBus = typedDiagram.get('eventBus');
+
+eventBus.on('diagram.init', (event) => {
+
+  // go forth and react to init (!)
+});

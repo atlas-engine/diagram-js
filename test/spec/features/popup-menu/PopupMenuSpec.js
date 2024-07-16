@@ -272,7 +272,6 @@ describe('features/popup-menu', function() {
 
       // then
       expect(domClasses(container).has('djs-popup-parent')).to.be.true;
-      expect(queryPopupAll('.djs-popup-backdrop')).to.have.length(1);
       expect(queryPopupAll('.djs-popup')).to.have.length(1);
 
       expect(domClasses(queryPopup('.djs-popup')).has('menu')).to.be.true;
@@ -1670,9 +1669,7 @@ describe('features/popup-menu', function() {
         expect(queryPopup('.popup-menu1')).to.be.null;
         expect(queryPopup('.popup-menu2')).not.to.be.null;
 
-        var popupBackdropEl = container.childNodes[0];
-
-        var popupEl = popupBackdropEl.childNodes[0];
+        var popupEl = container.childNodes[0];
         expect(popupEl.style.left).to.eql('200px');
         expect(popupEl.style.top).to.eql('200px');
         expect(domClasses(popupEl).has('popup-menu2')).to.be.true;
@@ -2115,10 +2112,10 @@ describe('features/popup-menu', function() {
     }
 
 
-    it('should scale within [ 1.0, 1.5 ] by default', function() {
+    it('should not scale by default', function() {
 
       // given
-      var expectedScales = [ 1.0, 1.2, 1.5, 1.5, 1.0 ];
+      var expectedScales = [ 1.0, 1.0, 1.0, 1.0, 1.0 ];
 
       bootstrapDiagram({
         modules: [
@@ -2132,10 +2129,10 @@ describe('features/popup-menu', function() {
     });
 
 
-    it('should scale within [ 1.0, 1.5 ] without scale config', function() {
+    it('should not scale without scale config', function() {
 
       // given
-      var expectedScales = [ 1.0, 1.2, 1.5, 1.5, 1.0 ];
+      var expectedScales = [ 1.0, 1.0, 1.0, 1.0, 1.0 ];
 
       bootstrapDiagram({
         modules: [

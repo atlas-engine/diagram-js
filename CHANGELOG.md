@@ -6,6 +6,95 @@ All notable changes to [diagram-js](https://github.com/bpmn-io/diagram-js) are d
 
 _**Note:** Yet to be released changes appear here._
 
+## 14.8.0
+
+* `FEAT`: add `scheduler` service ([#915](https://github.com/bpmn-io/diagram-js/pull/915))
+* `CHORE`: update `contextPad` visibility only once per frame ([#915](https://github.com/bpmn-io/diagram-js/pull/915))
+* `CHORE`: do not query DOM for `Canvas#hasMarker` check ([#919](https://github.com/bpmn-io/diagram-js/pull/919))
+* `CHORE`: only update context pad if affected element's marker changed ([#912](https://github.com/bpmn-io/diagram-js/pull/912))
+
+## 14.7.2
+
+* `FIX`: remove incorrect attribute in popup menu item ([#918](https://github.com/bpmn-io/diagram-js/pull/918))
+
+## 14.7.1
+
+* `FIX`: ensure cloned marker IDs are unique ([#909](https://github.com/bpmn-io/diagram-js/pull/909))
+
+## 14.7.0
+
+* `FEAT`: support nested `defs` in the SVG ([#906](https://github.com/bpmn-io/diagram-js/pull/906))
+* `FIX`: show connection markers on move preview ([#904](https://github.com/bpmn-io/diagram-js/issues/904))
+
+## 14.6.0
+
+* `FEAT`: popup menu header entries can be grouped ([#900](https://github.com/bpmn-io/diagram-js/pull/900))
+
+## 14.5.4
+
+* `FIX`: don't hide context pad on `djs-label-hidden` ([#898](https://github.com/bpmn-io/diagram-js/pull/898))
+
+## 14.5.3
+
+* `FIX`: hide context pad when targets hidden ([#897](https://github.com/bpmn-io/diagram-js/pull/897))
+
+## 14.5.2
+
+* `FIX`: remove leftover return statement from context pad ([#895](https://github.com/bpmn-io/diagram-js/pull/895))
+
+## 14.5.1
+
+* `FIX`: do not re-open context pad for elements that were removed ([#893](https://github.com/bpmn-io/diagram-js/pull/893))
+
+## 14.5.0
+
+* `FEAT`: context pad position absolute instead of relative to element ([#888](https://github.com/bpmn-io/diagram-js/pull/888))
+* `CHORE`: deprecate `ContextPad#getPad` ([#888](https://github.com/bpmn-io/diagram-js/pull/888))
+
+## 14.4.2
+
+* `FIX`: do not call context pad handler twice on hover ([#890](https://github.com/bpmn-io/diagram-js/pull/890))
+
+## 14.4.1
+
+* `FIX`: prevent missing parent error in move preview ([#889](https://github.com/bpmn-io/diagram-js/pull/889))
+
+## 14.4.0
+
+* `FEAT`: do not scale context pad and popup menu by default ([#883](https://github.com/bpmn-io/diagram-js/pull/883))
+
+## 14.3.3
+
+* `FIX`: do not cancel dragging on tool deselection ([#881](https://github.com/bpmn-io/diagram-js/pull/881))
+
+## 14.3.2
+
+* `FIX`: ensure popup menu position is consistent with scale ([#878](https://github.com/bpmn-io/diagram-js/pull/878))
+
+## 14.3.1
+
+* `FIX`: ensure popup menu is rendered on top
+
+## 14.3.0
+
+* `FEAT`: make popup menu fully keyboard navigatable ([#871](https://github.com/bpmn-io/diagram-js/issues/871))
+* `FIX`: do not trap `TAB` in popup menu ([#874](https://github.com/bpmn-io/diagram-js/pull/874))
+* `FIX`: do not trap `Space` and `Enter` on button elements ([#874](https://github.com/bpmn-io/diagram-js/pull/874))
+* `FIX`: do not trap click outside of popup menu ([#874](https://github.com/bpmn-io/diagram-js/pull/874))
+* `FIX`: show empty placeholder in popup menu when no entries were returned ([#876](https://github.com/bpmn-io/diagram-js/pull/876))
+* `FIX`: correct various types ([#875](https://github.com/bpmn-io/diagram-js/pull/875))
+
+## 14.2.0
+
+* `FEAT`: be able to type diagram services and events ([#862](https://github.com/bpmn-io/diagram-js/pull/862))
+* `FIX`: correct various types ([#865](https://github.com/bpmn-io/diagram-js/pull/865), [#873](https://github.com/bpmn-io/diagram-js/pull/873))
+* `DEPS`: update to `didi@10.2.2`
+* `DEPS`: update to `@bpmn-io/diagram-js-ui@0.2.3`
+
+## 14.1.1
+
+* `FIX`: apply labels to inputs ([#872](https://github.com/bpmn-io/diagram-js/pull/872))
+
 ## 14.1.0
 
 * `FEAT`: add ability to refresh popup menu ([#804](https://github.com/bpmn-io/diagram-js/issues/804))

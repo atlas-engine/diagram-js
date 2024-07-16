@@ -1,3 +1,5 @@
+import { expectToBeAccessible } from '@bpmn-io/a11y';
+
 import PopupMenuComponent from 'lib/features/popup-menu/PopupMenuComponent';
 
 import {
@@ -185,7 +187,7 @@ describe('features/popup-menu - <PopupMenu>', function() {
 
       await createPopupMenu({ container, onClose });
 
-      container.children[0].click();
+      document.body.click();
 
       expect(onClose).to.have.been.calledOnce;
     });
@@ -347,62 +349,18 @@ describe('features/popup-menu - <PopupMenu>', function() {
       expect(onSelectSpy).to.have.been.calledOnce;
     });
 
-  });
 
-
-  describe('header', function() {
-
-    it('should render header entry', async function() {
+    it('should show placeholder if no entries', async function() {
 
       // given
-      const imageUrl = TEST_IMAGE_URL;
-
-      const headerEntries = [
-        { id: '1', label: '1' },
-        { id: '2', imageUrl, title: 'Toggle foo' }
-      ];
-
-      await createPopupMenu({ container, headerEntries });
-
-      // when
-      const [
-        firstEntry,
-        secondEntry
-      ] = domQueryAll('.entry', container);
+      await createPopupMenu({
+        container,
+        emptyPlaceholder: 'No Entries'
+      });
 
       // then
-      expect(firstEntry.title).to.eql('1');
-      expect(firstEntry.textContent).to.eql('1');
-
-      expect(secondEntry.title).to.eql('Toggle foo');
-      expect(secondEntry.textContent).to.eql('');
-      expect(secondEntry.innerHTML).to.eql(`<img class="djs-popup-entry-icon" src="${ imageUrl }" alt="">`);
-    });
-
-
-    it('should select header entry on hover', async function() {
-
-      // given
-      const headerEntries = [
-        { id: '1', label: '1' },
-        { id: '2', label: '2' }
-      ];
-
-      await createPopupMenu({ container, headerEntries });
-
-      const entryEl = domQuery('.entry', container);
-
-      // when
-      await trigger(entryEl, mouseEnter());
-
-      // then
-      expect(entryEl.classList.contains('selected'), 'entry is selected').to.be.true;
-
-      // but when
-      await trigger(entryEl, mouseLeave());
-
-      // then
-      expect(entryEl.classList.contains('selected')).to.be.false;
+      expect(domQueryAll('.entry', container)).to.have.length(0);
+      expect(domQuery('.djs-popup-no-results', container)).to.exist;
     });
 
   });
@@ -735,6 +693,41 @@ describe('features/popup-menu - <PopupMenu>', function() {
   });
 
 
+  describe('a11y', function() {
+
+    const entries = [
+      { id: '1', label: 'Entry 1', description: 'Entry 1 description' },
+      { id: '2', label: 'Entry 2' },
+      { id: '3', label: 'Entry 3' },
+      { id: '4', label: 'Entry 4' },
+      { id: '5', label: 'Entry 5', search: 'foo' },
+      { id: 'some_entry_id', label: 'Last' },
+      { id: '7', label: 'Entry 7' , searchable: false }
+    ];
+
+    it('should have label for search input', async function() {
+
+      // given
+      await createPopupMenu({ container, entries, title: 'Search', search: true });
+
+      const searchInput = domQuery('.djs-popup-search input', container);
+
+      // then
+      expect(searchInput.getAttribute('aria-label')).to.eql('Search');
+    });
+
+
+    it('should report no violations', async function() {
+
+      // given
+      await createPopupMenu({ container, entries, title: 'Search', search: true });
+
+      // then
+      await expectToBeAccessible(container);
+    });
+  });
+
+
   // helpers
   async function createPopupMenu(options) {
 
@@ -802,14 +795,6 @@ function keyUp(key) {
  */
 function dragStart() {
   return new DragEvent('dragstart');
-}
-
-function mouseEnter() {
-  return new MouseEvent('mouseenter', { bubbles: true });
-}
-
-function mouseLeave() {
-  return new MouseEvent('mouseleave', { bubbles: true });
 }
 
 async function trigger(element, event) {
