@@ -16,8 +16,6 @@ import {
   classes as domClasses
 } from 'min-dom';
 
-import { getBBox } from 'lib/util/Elements';
-
 import contextPadModule from 'lib/features/context-pad';
 import selectionModule from 'lib/features/selection';
 
@@ -370,7 +368,6 @@ describe('features/context-pad', function() {
         expect(contextPad.isOpen(shape1)).to.be.false;
         expect(contextPad.isOpen([ shape2 ])).to.be.false;
         expect(contextPad.isOpen([ shape1, shape2 ])).to.be.true;
-
       }));
 
     });
@@ -393,23 +390,24 @@ describe('features/context-pad', function() {
       }));
 
 
-      it('open and hidden', inject(function(canvas, contextPad, eventBus) {
+      it('open and hidden', inject(function(canvas, contextPad) {
 
         // given
         var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
 
         canvas.addShape(shape);
 
-        // when
         contextPad.open(shape);
-        eventBus.fire('canvas.viewbox.changing');
+
+        // when
+        contextPad.hide();
 
         // then
         expect(contextPad.isShown()).not.to.be.true;
       }));
 
 
-      it('closed', inject(function(canvas, contextPad, eventBus) {
+      it('closed', inject(function(canvas, contextPad) {
 
         // given
         var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
@@ -455,6 +453,108 @@ describe('features/context-pad', function() {
         // then
         expect(contextPad.isOpen()).to.be.true;
       }));
+
+    });
+
+
+    describe('show and hide', function() {
+
+      it('should show', inject(function(canvas, contextPad, eventBus) {
+
+        // given
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        contextPad.open(shape);
+
+        contextPad.hide();
+
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.false;
+
+        var showSpy = sinon.spy();
+
+        eventBus.on('contextPad.show', showSpy);
+
+        // when
+        contextPad.show();
+
+        // then
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.true;
+
+        expect(showSpy).to.have.been.calledOnce;
+      }));
+
+
+      it('should hide', inject(function(canvas, contextPad, eventBus) {
+
+        // given
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        contextPad.open(shape);
+
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.true;
+
+        var hideSpy = sinon.spy();
+
+        eventBus.on('contextPad.hide', hideSpy);
+
+        // when
+        contextPad.hide();
+
+        // then
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.false;
+
+        expect(hideSpy).to.have.been.calledOnce;
+      }));
+
+
+      describe('updating position', function() {
+
+        var updatePositionSpy;
+
+        beforeEach(inject(function(contextPad) {
+          updatePositionSpy = sinon.spy(contextPad, '_updatePosition');
+        }));
+
+        afterEach(function() {
+          updatePositionSpy.restore();
+        });
+
+
+        it('should update position on show', inject(function(canvas, contextPad) {
+
+          // given
+          var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+          canvas.addShape(shape);
+
+          contextPad.open(shape);
+
+          contextPad.hide();
+
+          expect(contextPad.isOpen()).to.be.true;
+          expect(contextPad.isShown()).to.be.false;
+
+          updatePositionSpy.resetHistory();
+
+          // when
+          contextPad.show();
+
+          // then
+          expect(contextPad.isOpen()).to.be.true;
+          expect(contextPad.isShown()).to.be.true;
+
+          expect(updatePositionSpy).to.have.been.calledOnce;
+        }));
+
+      });
 
     });
 
@@ -517,8 +617,7 @@ describe('features/context-pad', function() {
       contextPad.close();
 
       // then
-      expect(overlays.get({ element: shape })).to.have.length(0);
-      expect(!!contextPad.isOpen()).to.be.false;
+      expect(contextPad.isOpen()).to.be.false;
     }));
 
 
@@ -596,10 +695,20 @@ describe('features/context-pad', function() {
         });
       }
 
+      function remove(elements) {
+        getDiagramJS().invoke(function(canvas) {
+          (isArray(elements) ? elements : [ elements ]).forEach(function(element) {
+            canvas.removeShape(element);
+          });
+        });
+
+        change(elements);
+      }
+
 
       describe('should handle changed', function() {
 
-        it('single target', inject(function(eventBus, canvas, contextPad) {
+        it('single target', inject(function(canvas, contextPad) {
 
           // given
           var shape_1 = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
@@ -620,7 +729,7 @@ describe('features/context-pad', function() {
         }));
 
 
-        it('multiple targets', inject(function(eventBus, canvas, contextPad) {
+        it('multiple targets', inject(function(canvas, contextPad) {
 
           // given
           var shape_1 = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
@@ -645,9 +754,59 @@ describe('features/context-pad', function() {
       });
 
 
+      describe('should handle removed', function() {
+
+        it('some removed', inject(function(canvas, contextPad) {
+
+          // given
+          var shape_1 = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+          var shape_2 = { id: 's2', width: 50, height: 50, x: 210, y: 10 };
+
+          canvas.addShape(shape_1);
+          canvas.addShape(shape_2);
+
+          // assume
+          contextPad.open([ shape_1, shape_2 ]);
+
+          // then
+          expectOpened([ shape_1, shape_2 ]);
+
+          // when
+          remove(shape_1);
+
+          // then
+          expectOpened(shape_2);
+        }));
+
+
+        it('all removed', inject(function(canvas, contextPad) {
+
+          // given
+          var shape_1 = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+          var shape_2 = { id: 's2', width: 50, height: 50, x: 210, y: 10 };
+
+          canvas.addShape(shape_1);
+          canvas.addShape(shape_2);
+
+          // assume
+          contextPad.open([ shape_1, shape_2 ]);
+
+          // then
+          expectOpened([ shape_1, shape_2 ]);
+
+          // when
+          remove([ shape_1, shape_2 ]);
+
+          // then
+          expectClosed();
+        }));
+
+      });
+
+
       describe('should ignore unrelated', function() {
 
-        it('single target', inject(function(eventBus, canvas, contextPad) {
+        it('single target', inject(function(canvas, contextPad) {
 
           // given
           var shape_1 = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
@@ -670,7 +829,7 @@ describe('features/context-pad', function() {
         }));
 
 
-        it('multiple targets', inject(function(eventBus, canvas, contextPad) {
+        it('multiple targets', inject(function(canvas, contextPad) {
 
           // given
           var shape_1 = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
@@ -771,6 +930,150 @@ describe('features/context-pad', function() {
 
     });
 
+
+    describe('<element.marker.update>', function() {
+
+      var clock;
+
+      beforeEach(function() {
+        clock = sinon.useFakeTimers();
+      });
+
+      afterEach(function() {
+        clock.restore();
+      });
+
+
+      it('should hide context pad when djs-element-hidden is added', inject(function(canvas, contextPad) {
+
+        // given
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        contextPad.open(shape);
+
+        // assume
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.true;
+
+        // when
+        canvas.addMarker(shape, 'djs-element-hidden');
+        clock.runToFrame();
+
+        // then
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.false;
+      }));
+
+
+      it('should show context pad when djs-element-hidden is removed', inject(function(canvas, contextPad) {
+
+        // given
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        canvas.addMarker(shape, 'djs-element-hidden');
+
+        contextPad.open(shape);
+        clock.runToFrame();
+
+        // assume
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.false;
+
+        // when
+        canvas.removeMarker(shape, 'djs-element-hidden');
+        clock.runToFrame();
+
+        // then
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.true;
+      }));
+
+
+      it('should only update once per frame', inject(function(canvas, contextPad) {
+
+        // given
+        var hideSpy = sinon.spy(contextPad, 'hide');
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        contextPad.open(shape);
+
+
+        // assume
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.true;
+
+        // when
+        canvas.addMarker(shape, 'djs-element-hidden');
+        canvas.removeMarker(shape, 'djs-element-hidden');
+        canvas.addMarker(shape, 'djs-element-hidden');
+
+        clock.runToFrame();
+
+        // then
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.false;
+        expect(hideSpy).to.have.been.calledOnce;
+      }));
+
+
+      it('should not update visibility if element is not target', inject(function(canvas, contextPad) {
+
+        // given
+        var shape1 = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        var shape2 = { id: 's2', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape1);
+        canvas.addShape(shape2);
+
+        contextPad.open(shape1);
+
+        expect(contextPad.isOpen()).to.be.true;
+
+        var spy = sinon.spy(contextPad, '_updateVisibility');
+
+        // when
+        canvas.addMarker(shape2, 'djs-element-hidden');
+
+        // then
+        expect(spy).not.to.have.been.called;
+      }));
+
+
+      it('should not update when diagram was destroyed', inject(function(canvas, contextPad) {
+
+        // given
+        var diagramJs = getDiagramJS();
+        var hideSpy = sinon.spy(contextPad, 'hide');
+
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        contextPad.open(shape);
+
+        // assume
+        expect(contextPad.isOpen()).to.be.true;
+        expect(contextPad.isShown()).to.be.true;
+
+        // when
+        canvas.addMarker(shape, 'djs-element-hidden');
+        diagramJs.destroy();
+
+        clock.runToFrame();
+
+        // then
+        expect(hideSpy).not.to.have.been.called;
+      }));
+
+    });
+
   });
 
 
@@ -828,15 +1131,21 @@ describe('features/context-pad', function() {
 
       var event = globalEvent(target, { x: 0, y: 0 });
 
+      sinon.spy(contextPad, 'triggerEntry');
+
       // when
       contextPad.trigger('mouseover', event);
 
       expect(event.__handled).not.to.exist;
 
+      expect(contextPad.triggerEntry).not.to.have.been.called;
+
       clock.tick(500);
 
       // then
       expect(event.__handled).to.be.true;
+
+      expect(contextPad.triggerEntry).to.have.been.calledOnceWith('action.hover', 'hover', event);
     }));
 
 
@@ -865,10 +1174,14 @@ describe('features/context-pad', function() {
 
       var event = globalEvent(target, { x: 0, y: 0 });
 
+      sinon.spy(contextPad, 'triggerEntry');
+
       // when
       contextPad.trigger('mouseover', event);
 
       expect(event.__handled).not.to.exist;
+
+      expect(contextPad.triggerEntry).not.to.have.been.called;
 
       clock.tick(250);
 
@@ -878,6 +1191,8 @@ describe('features/context-pad', function() {
 
       // then
       expect(event.__handled).not.to.exist;
+
+      expect(contextPad.triggerEntry).not.to.have.been.calledWith('action.hover', 'hover', event);
     }));
 
 
@@ -1030,12 +1345,9 @@ describe('features/context-pad', function() {
 
       contextPad.open(shape);
 
-      var pad = contextPad.getPad(shape),
-          html = pad.html,
-          target = domQuery('[data-action="action.c"]', html);
+      contextPad.hide();
 
-      var event = globalEvent(target, { x: 0, y: 0 });
-      eventBus.fire('canvas.viewbox.changing');
+      var event = globalEvent(document.body, { x: 0, y: 0 });
 
       // when
       contextPad.trigger('click', event);
@@ -1071,163 +1383,11 @@ describe('features/context-pad', function() {
       contextPad.trigger('click', event);
 
       // then
-      const entry = contextPad._current.entries['action.c'];
+      var entry = contextPad._current.entries['action.c'];
 
       expect(triggerSpy).to.have.been.calledOnce;
       expect(triggerSpy.getCall(0).args[1]).to.eql({ entry, event });
     }));
-
-  });
-
-
-  describe('scaling', function() {
-
-    var NUM_REGEX = /([+-]?\d*[.]?\d+)(?=,|\))/g;
-    var zoomLevels = [ 1.0, 1.2, 3.5, 10, 0.5 ];
-
-    function asVector(scaleStr) {
-      if (scaleStr && scaleStr !== 'none') {
-        var m = scaleStr.match(NUM_REGEX);
-
-        var x = parseFloat(m[0], 10);
-        var y = m[1] ? parseFloat(m[1], 10) : x;
-
-        return {
-          x: x,
-          y: y
-        };
-      }
-    }
-
-    function scaleVector(element) {
-      return asVector(element.style.transform);
-    }
-
-    function verifyScales(expectedScales) {
-
-      return getDiagramJS().invoke(function(canvas, contextPad) {
-
-        // given
-        var shape = canvas.addShape({
-          id: 's1',
-          width: 100, height: 100,
-          x: 10, y: 10,
-          type: 'drag'
-        });
-
-        contextPad.open(shape);
-
-        var pad = contextPad.getPad(shape);
-
-        var padParent = pad.html.parentNode;
-
-        // test multiple zoom steps
-        zoomLevels.forEach(function(zoom, idx) {
-
-          var expectedScale = expectedScales[idx];
-
-          // when
-          canvas.zoom(zoom);
-
-          var actualScale = scaleVector(padParent) || { x: 1, y: 1 };
-
-          var effectiveScale = zoom * actualScale.x;
-
-          // then
-          expect(actualScale.x).to.eql(actualScale.y);
-          expect(effectiveScale).to.be.closeTo(expectedScale, 0.00001);
-        });
-      });
-    }
-
-
-    it('should scale [ 1.0, 1.5 ] by default', function() {
-
-      // given
-      var expectedScales = [ 1.0, 1.2, 1.5, 1.5, 1.0 ];
-
-      bootstrapDiagram({
-        modules: [ contextPadModule, providerModule ]
-      })();
-
-      // when
-      verifyScales(expectedScales);
-    });
-
-
-    it('should scale [ 1.0, 1.5 ] without scale config', function() {
-
-      // given
-      var expectedScales = [ 1.0, 1.2, 1.5, 1.5, 1.0 ];
-
-      bootstrapDiagram({
-        modules: [ contextPadModule, providerModule ],
-        contextPad: {}
-      })();
-
-      // when
-      verifyScales(expectedScales);
-    });
-
-
-    it('should scale within the limits set in config', function() {
-
-      // given
-      var expectedScales = [ 1.0, 1.2, 1.2, 1.2, 1.0 ];
-
-      var config = {
-        scale: {
-          min: 1.0,
-          max: 1.2
-        }
-      };
-
-      bootstrapDiagram({
-        modules: [ contextPadModule, providerModule ],
-        contextPad: config
-      })();
-
-      // when
-      verifyScales(expectedScales);
-    });
-
-
-    it('should scale with scale = true', function() {
-
-      // given
-      var expectedScales = zoomLevels;
-
-      var config = {
-        scale: true
-      };
-
-      bootstrapDiagram({
-        modules: [ contextPadModule, providerModule ],
-        contextPad: config
-      })();
-
-      // when
-      verifyScales(expectedScales);
-    });
-
-
-    it('should not scale with scale = false', function() {
-
-      // given
-      var expectedScales = [ 1.0, 1.0, 1.0, 1.0, 1.0 ];
-
-      var config = {
-        scale: false
-      };
-
-      bootstrapDiagram({
-        modules: [ contextPadModule, providerModule ],
-        contextPad: config
-      })();
-
-      // when
-      verifyScales(expectedScales);
-    });
 
   });
 
@@ -1378,33 +1538,61 @@ describe('features/context-pad', function() {
         canvas.addShape(shape);
 
         // when
-        const pad = contextPad.getPad(shape);
+        var position = contextPad._getPosition(shape);
 
         // then
-        var bBox = getBBox(shape);
-        expect(pad.position).to.eql({
-          left: bBox.x + bBox.width + 12,
-          top: bBox.y - 12 / 2
-        });
+        var containerBounds = canvas.getContainer().getBoundingClientRect();
+        var targetBounds = canvas.getGraphics(shape).getBoundingClientRect();
+
+        expect(position.left).be.closeTo(targetBounds.left + targetBounds.width + 8 - containerBounds.left, 1);
+        expect(position.top).be.closeTo(targetBounds.top - containerBounds.top, 1);
       }));
 
 
-      it('connection', inject(function(canvas, contextPad) {
+      it('shape (scaled)', inject(function(canvas, contextPad) {
 
         // given
-        var connection = { id: 'c1', waypoints: [ { x: 0, y: 0 }, { x: 100, y: 100 } ] };
+        var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+        canvas.addShape(shape);
+
+        canvas.zoom(1.5);
+
+        // when
+        var position = contextPad._getPosition(shape);
+
+        // then
+        var containerBounds = canvas.getContainer().getBoundingClientRect();
+        var targetBounds = canvas.getGraphics(shape).getBoundingClientRect();
+
+        expect(position.left).be.closeTo(targetBounds.left + targetBounds.width + 12 - containerBounds.left, 1);
+        expect(position.top).be.closeTo(targetBounds.top - containerBounds.top, 1);
+      }));
+
+
+      (isFirefox() ? it.skip : it)('connection', inject(function(canvas, contextPad) {
+
+        // given
+        var connection = {
+          id: 'c1',
+          waypoints: [
+            { x: 0, y: 0 },
+            { x: 100, y: 0 },
+            { x: 100, y: 100 }
+          ]
+        };
 
         canvas.addConnection(connection);
 
         // when
-        const pad = contextPad.getPad(connection);
+        var position = contextPad._getPosition(connection);
 
         // then
-        var bBox = getBBox(connection.waypoints[connection.waypoints.length - 1]);
-        expect(pad.position).to.eql({
-          left: bBox.x + bBox.width + 12,
-          top: bBox.y - 12 / 2
-        });
+        var containerBounds = canvas.getContainer().getBoundingClientRect();
+        var targetBounds = canvas.getGraphics(connection).getBoundingClientRect();
+
+        expect(position.left).be.closeTo(targetBounds.left + targetBounds.width + 8 - containerBounds.left, 1);
+        expect(position.top).be.closeTo(targetBounds.bottom - containerBounds.top, 1);
       }));
 
     });
@@ -1413,23 +1601,178 @@ describe('features/context-pad', function() {
     it('multi element', inject(function(canvas, contextPad) {
 
       // given
-      var shape1 = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
-      var shape2 = { id: 's2', width: 100, height: 100, x: 210, y: 10 };
+      var shape1 = { id: 's1', x: 0, y: 0, width: 100, height: 100 };
+      var shape2 = { id: 's2', x: 100, y: 100, width: 100, height: 100 };
 
       canvas.addShape(shape1);
       canvas.addShape(shape2);
 
       // when
-      const pad = contextPad.getPad([ shape1, shape2 ]);
+      var position = contextPad._getPosition([ shape1, shape2 ]);
 
       // then
-      var bBox = getBBox([ shape1, shape2 ]);
-      expect(pad.position).to.eql({
-        left: bBox.x + bBox.width + 12,
-        top: bBox.y - 12 / 2
-      });
+      var containerBounds = canvas.getContainer().getBoundingClientRect();
+      var target1Bounds = canvas.getGraphics(shape1).getBoundingClientRect();
+      var target2Bounds = canvas.getGraphics(shape2).getBoundingClientRect();
+
+      expect(position.left).be.closeTo(target2Bounds.left + target2Bounds.width + 8 - containerBounds.left, 1);
+      expect(position.top).be.closeTo(target1Bounds.top - containerBounds.top, 1);
+    }));
+
+
+    it('should update position on canvas.viewbox.changed', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = { id: 's1', width: 100, height: 100, x: 10, y: 10 };
+
+      canvas.addShape(shape);
+
+      canvas.scroll({ dx: 100, dy: 100 });
+
+      // when
+      var position = contextPad._getPosition(shape);
+
+      // then
+      var containerBounds = canvas.getContainer().getBoundingClientRect();
+      var targetBounds = canvas.getGraphics(shape).getBoundingClientRect();
+
+      expect(position.left).be.closeTo(targetBounds.left + targetBounds.width + 8 - containerBounds.left, 1);
+      expect(position.top).be.closeTo(targetBounds.top - containerBounds.top, 1);
     }));
 
   });
 
+
+  describe('legacy getPad', function() {
+
+    beforeEach(bootstrapDiagram({
+      modules: [
+        contextPadModule,
+        providerModule
+      ]
+    }));
+
+
+    it('should return pad', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({ id: 's1', width: 100, height: 100, x: 10, y: 10 });
+
+      // when
+      var pad = contextPad.getPad(shape);
+
+      // then
+      expect(pad).to.exist;
+      expect(pad.html).to.exist;
+    }));
+
+
+    it('should return existing if targets equal (target === target)', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({ id: 's1', width: 100, height: 100, x: 10, y: 10 });
+
+      contextPad.open(shape);
+
+      var spy = sinon.spy(contextPad, '_createHtml');
+
+      // when
+      var pad = contextPad.getPad(shape);
+
+      // then
+      expect(pad).to.exist;
+      expect(spy).not.to.have.been.called;
+    }));
+
+
+    it('should return existing if targets equal (target === [ target ])', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({ id: 's1', width: 100, height: 100, x: 10, y: 10 });
+
+      contextPad.open(shape);
+
+      var spy = sinon.spy(contextPad, '_createHtml');
+
+      // when
+      var pad = contextPad.getPad([ shape ]);
+
+      // then
+      expect(pad).to.exist;
+      expect(spy).not.to.have.been.called;
+    }));
+
+
+    it('should return existing if targets equal ([ target ] === target)', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({ id: 's1', width: 100, height: 100, x: 10, y: 10 });
+
+      contextPad.open([ shape ]);
+
+      var spy = sinon.spy(contextPad, '_createHtml');
+
+      // when
+      var pad = contextPad.getPad(shape);
+
+      // then
+      expect(pad).to.exist;
+      expect(spy).not.to.have.been.called;
+    }));
+
+
+    it('should return new if targets not equal (target !== target)', inject(function(canvas, contextPad) {
+
+      // given
+      var shape = canvas.addShape({ id: 's1', width: 100, height: 100, x: 10, y: 10 }),
+          shape2 = canvas.addShape({ id: 's2', width: 100, height: 100, x: 10, y: 10 });
+
+      contextPad.open(shape);
+
+      var spy = sinon.spy(contextPad, '_createHtml');
+
+      // when
+      var pad = contextPad.getPad(shape2);
+
+      // then
+      expect(pad).to.exist;
+      expect(spy).to.have.been.called;
+    }));
+
+
+    describe('deprecation warning', function() {
+
+      var warnSpy;
+
+      beforeEach(function() {
+        warnSpy = sinon.spy(console, 'warn');
+      });
+
+      afterEach(function() {
+        console.warn.restore();
+      });
+
+      it('should log deprecation warning', inject(function(canvas, contextPad) {
+
+        // given
+        var shape = canvas.addShape({ id: 's1', width: 100, height: 100, x: 10, y: 10 });
+
+        // when
+        var pad = contextPad.getPad(shape);
+
+        // then
+        expect(pad).to.exist;
+
+        expect(warnSpy).to.have.been.calledOnce;
+        expect(warnSpy.getCall(0).args[ 0 ]).to.be.instanceOf(Error);
+        expect(warnSpy.getCall(0).args[ 0 ].message).to.match(/is deprecated/);
+      }));
+    });
+
+  });
+
 });
+
+function isFirefox() {
+  return /firefox/i.test(navigator.userAgent);
+}
